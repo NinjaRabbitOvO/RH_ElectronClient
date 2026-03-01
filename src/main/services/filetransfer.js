@@ -1,11 +1,11 @@
-const { execFile } = require("node:child_process");
+const { spawn } = require("node:child_process");
 const path = require("node:path");
-const { promisify } = require("node:util");
-
-const execFileAsync = promisify(execFile);
 const TCP_SCRIPT_PATH = path.join(__dirname, "..", "..", "..", "PlusWifi_Client.py");
 const UDP_SCRIPT_PATH = path.join(__dirname, "..", "..", "..", "udp_file_client.py");
 const EXECUTION_TIMEOUT_MS = 10 * 60 * 1000;
+const { IPC_CHANNELS } = require("../../shared/ipc");
+
+let activeTransfer = null;
 
 function normalizeDateInput(value) {
   if (typeof value !== "string") {
@@ -21,67 +21,112 @@ function normalizeDateInput(value) {
   return normalized;
 }
 
-async function tryExecute(command, args) {
-  return execFileAsync(command, args, {
-    cwd: path.dirname(TCP_SCRIPT_PATH),
-    encoding: "utf8",
-    timeout: EXECUTION_TIMEOUT_MS,
-    windowsHide: true,
-  });
-}
-
-async function runScript(scriptPath, dateText) {
-  const transferDate = normalizeDateInput(dateText);
-  const attempts = [
-    { command: "py", args: ["-3", scriptPath, transferDate] },
-    { command: "python", args: [scriptPath, transferDate] },
-  ];
-
-  let lastError = null;
-
-  for (const attempt of attempts) {
-    try {
-      const result = await tryExecute(attempt.command, attempt.args);
-
-      return {
-        ok: true,
-        transferDate,
-        stdout: result.stdout || "",
-        stderr: result.stderr || "",
-        command: [attempt.command, ...attempt.args].join(" "),
-      };
-    } catch (error) {
-      lastError = error;
-
-      if (error.code === "ENOENT") {
-        continue;
-      }
-
-      return {
-        ok: false,
-        transferDate,
-        stdout: error.stdout || "",
-        stderr: error.stderr || error.message || "",
-        command: [attempt.command, ...attempt.args].join(" "),
-      };
-    }
+function sendTransferEvent(webContents, payload) {
+  if (!webContents || webContents.isDestroyed()) {
+    return;
   }
 
-  return {
-    ok: false,
+  webContents.send(IPC_CHANNELS.transferEvent, payload);
+}
+
+function launchTransferProcess(webContents, mode, scriptPath, dateText) {
+  const transferDate = normalizeDateInput(dateText);
+
+  if (activeTransfer) {
+    return {
+      ok: false,
+      started: false,
+      transferDate,
+      error: "Another transfer is already running.",
+    };
+  }
+
+  const args = ["-3", "-u", scriptPath, transferDate];
+  const child = spawn("py", args, {
+    cwd: path.dirname(TCP_SCRIPT_PATH),
+    windowsHide: true,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  const timeoutHandle = setTimeout(() => {
+    if (activeTransfer && activeTransfer.child === child) {
+      child.kill();
+    }
+  }, EXECUTION_TIMEOUT_MS);
+
+  activeTransfer = {
+    child,
+    mode,
     transferDate,
-    stdout: "",
-    stderr: lastError ? lastError.message || "Python launcher not found." : "Python launcher not found.",
-    command: "",
+  };
+
+  sendTransferEvent(webContents, {
+    type: "started",
+    mode,
+    transferDate,
+    command: `py -3 -u ${path.basename(scriptPath)} ${transferDate}`,
+  });
+
+  child.stdout.on("data", (chunk) => {
+    sendTransferEvent(webContents, {
+      type: "stdout",
+      mode,
+      chunk: String(chunk),
+    });
+  });
+
+  child.stderr.on("data", (chunk) => {
+    sendTransferEvent(webContents, {
+      type: "stderr",
+      mode,
+      chunk: String(chunk),
+    });
+  });
+
+  child.on("error", (error) => {
+    clearTimeout(timeoutHandle);
+
+    if (activeTransfer && activeTransfer.child === child) {
+      activeTransfer = null;
+    }
+
+    sendTransferEvent(webContents, {
+      type: "error",
+      mode,
+      message: error.message || "Failed to launch transfer process.",
+    });
+  });
+
+  child.on("close", (code, signal) => {
+    clearTimeout(timeoutHandle);
+
+    if (activeTransfer && activeTransfer.child === child) {
+      activeTransfer = null;
+    }
+
+    sendTransferEvent(webContents, {
+      type: "exit",
+      mode,
+      code,
+      signal,
+      ok: code === 0,
+    });
+  });
+
+  return {
+    ok: true,
+    started: true,
+    transferDate,
+    mode,
   };
 }
 
-async function runPythonTransfer(dateText) {
-  return runScript(TCP_SCRIPT_PATH, dateText);
+async function runPythonTransfer(webContents, dateText) {
+  return launchTransferProcess(webContents, "tcp", TCP_SCRIPT_PATH, dateText);
 }
 
-async function runUdpTransfer(dateText) {
-  return runScript(UDP_SCRIPT_PATH, dateText);
+async function runUdpTransfer(webContents, dateText) {
+  return launchTransferProcess(webContents, "udp", UDP_SCRIPT_PATH, dateText);
 }
 
 module.exports = {

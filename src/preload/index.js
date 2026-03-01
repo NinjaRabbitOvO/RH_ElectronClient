@@ -4,6 +4,17 @@ const { IPC_CHANNELS } = require("../shared/ipc");
 
 contextBridge.exposeInMainWorld("appApi", {
   filetransfer: {
+    onEvent(listener) {
+      const handler = (_event, payload) => {
+        listener(payload);
+      };
+
+      ipcRenderer.on(IPC_CHANNELS.transferEvent, handler);
+
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.transferEvent, handler);
+      };
+    },
     start(dateText) {
       return ipcRenderer.invoke(IPC_CHANNELS.startFileTransfer, dateText);
     },

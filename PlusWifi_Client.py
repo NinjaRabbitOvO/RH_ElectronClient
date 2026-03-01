@@ -1,7 +1,8 @@
-import sys
-import socket
-import time
+import json
 import os
+import socket
+import sys
+import time
 from datetime import datetime
 
 
@@ -13,6 +14,12 @@ SOCK_READ_CHUNK = 8192
 
 # 文件数据循环每次期望读的最大块（保持你原来的 32KB）
 FILE_CHUNK = 32768
+
+
+def emit_event(event_type: str, **payload):
+    message = {"type": event_type}
+    message.update(payload)
+    print(f"@@EVENT@@ {json.dumps(message, ensure_ascii=True)}", flush=True)
 
 
 def format_rate(bps: float) -> str:
@@ -73,6 +80,7 @@ def main():
     # 可选：保持默认行为不设timeout；若你想避免永远卡住，可取消注释下一行
     # s.settimeout(20)
     s.connect((HOST, PORT))
+    emit_event("session", mode="tcp", endpoint=f"{HOST}:{PORT}")
 
     r = SocketReader(s)
 
@@ -80,11 +88,13 @@ def main():
         date = sys.argv[index]  # 传入参数名，保持原样用于目录名
         dt = datetime.strptime(date, "%Y%m%d")
         print(f"Date: {date}")
+        emit_event("date", date=date)
         count = 1
 
         # ✅ 按你的新规则：目录名 = "RE" + 传入参数名
         folder = f"RE{date}"
         os.makedirs(folder, exist_ok=True)
+        emit_event("folder", path=folder)
 
         # 第一个日期先请求DK
         if index == 1:
@@ -109,6 +119,7 @@ def main():
             elif cmd == 0x02:
                 count = r.read_u16be()
                 print(f"Files: {count}")
+                emit_event("files_count", count=count)
 
             elif cmd == 0x03:
                 start_ns = time.time_ns()
@@ -122,6 +133,15 @@ def main():
                 save_path = os.path.join(folder, base_name)
 
                 size = r.read_u32be()
+                emit_event(
+                    "file_start",
+                    name=base_name,
+                    path=save_path,
+                    size=size,
+                    received=0,
+                    remaining=size,
+                    percent=0.0,
+                )
 
                 # 用更大缓冲写文件，减少 Python 层写入开销（行为不变）
                 with open(save_path, "wb", buffering=1024 * 1024) as f:
@@ -131,6 +151,19 @@ def main():
                         data = r.read_exact(want)  # 关键：确保读满 want
                         f.write(data)
                         remaining -= want
+                        received = size - remaining
+                        elapsed = (time.time_ns() - start_ns) / 1_000_000_000
+                        rate_bps = int(received / elapsed) if elapsed > 0 else 0
+                        percent = (received / size) * 100 if size > 0 else 100.0
+                        emit_event(
+                            "file_progress",
+                            name=base_name,
+                            size=size,
+                            received=received,
+                            remaining=remaining,
+                            percent=percent,
+                            bps=rate_bps,
+                        )
 
                 total += size
 
@@ -139,6 +172,16 @@ def main():
                 bps = int(size / elapsed_s) if elapsed_s > 0 else 0
 
                 print(f"File: {base_name} -> {save_path} {size} bytes @ {bps} BPS")
+                emit_event(
+                    "file_done",
+                    name=base_name,
+                    path=save_path,
+                    size=size,
+                    received=size,
+                    remaining=0,
+                    percent=100.0,
+                    bps=bps,
+                )
                 count -= 1
 
             elif cmd == 0x04:
@@ -158,6 +201,13 @@ def main():
     delta = time.time() - start
     overall_bps = (total / delta) if delta > 0 else 0.0
     print(f"{total} bytes in {delta:.3f}s = {format_rate(overall_bps)}")
+    emit_event(
+        "summary",
+        total_bytes=total,
+        elapsed=delta,
+        average_bps=overall_bps,
+        average_rate=format_rate(overall_bps),
+    )
 
 
 if __name__ == "__main__":

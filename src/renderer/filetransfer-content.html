@@ -119,24 +119,25 @@
             <div class="receive-grid">
               <div class="receive-stat">
                 <span class="stat-caption">Current File</span>
-                <strong>example.bin</strong>
+                <strong id="stat-current-file">Waiting</strong>
               </div>
               <div class="receive-stat">
                 <span class="stat-caption">File Size</span>
-                <strong>12.4 MB</strong>
+                <strong id="stat-file-size">0 B</strong>
               </div>
               <div class="receive-stat">
                 <span class="stat-caption">Write Speed</span>
-                <strong>8.52 MB/s</strong>
+                <strong id="stat-write-speed">0 B/s</strong>
               </div>
               <div class="receive-stat">
                 <span class="stat-caption">Remaining</span>
-                <strong>0 B</strong>
+                <strong id="stat-remaining">0 B</strong>
               </div>
             </div>
             <div class="progress-shell" aria-label="File transfer progress">
-              <div class="progress-bar"></div>
+              <div id="transfer-progress-bar" class="progress-bar"></div>
             </div>
+            <p id="transfer-progress-text" class="progress-text">0.00%</p>
             <div class="receive-notes">
               <span class="note-pill">SocketReader.read_exact()</span>
               <span class="note-pill">Buffered file writes</span>
@@ -152,19 +153,19 @@
             <div class="summary-stack">
               <div class="summary-row">
                 <span>Total Received</span>
-                <strong>248.7 MB</strong>
+                <strong id="summary-total-bytes">0 B</strong>
               </div>
               <div class="summary-row">
                 <span>Total Duration</span>
-                <strong>31.482 s</strong>
+                <strong id="summary-total-duration">0.0 s</strong>
               </div>
               <div class="summary-row">
                 <span>Average Rate</span>
-                <strong>7.90 MB/s</strong>
+                <strong id="summary-average-rate">0 B/s</strong>
               </div>
               <div class="summary-row">
-                <span>Final Action</span>
-                <strong>Send 0x21 and close socket</strong>
+                <span>Files / Retries</span>
+                <strong id="summary-extra">0 / 0</strong>
               </div>
             </div>
           </section>
