@@ -1,4 +1,5 @@
 const IPC_CHANNELS = {
+  startFileTransfer: "app:start-file-transfer",
   ping: "app:ping",
 };
 

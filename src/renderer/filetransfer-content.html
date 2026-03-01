@@ -35,6 +35,26 @@
           </div>
         </header>
 
+        <section class="surface transfer-card launch-card">
+          <div class="card-head">
+            <p class="eyebrow">Launcher</p>
+            <h3>Run The Python Receiver</h3>
+          </div>
+          <div class="launch-row">
+            <label class="date-field" for="transfer-date">
+              <span class="field-label">Transfer Date</span>
+              <input id="transfer-date" type="date" />
+            </label>
+            <button id="start-transfer" class="transfer-button" type="button">
+              Start Transfer
+            </button>
+          </div>
+          <p id="transfer-action-status" class="action-status">
+            Choose a date, then launch the Python receiver.
+          </p>
+          <pre id="transfer-log" class="transfer-log">Waiting for execution...</pre>
+        </section>
+
         <section class="transfer-grid">
           <section class="surface transfer-card metrics-card">
             <div class="card-head">

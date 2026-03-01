@@ -3,6 +3,11 @@ const { contextBridge, ipcRenderer } = require("electron");
 const { IPC_CHANNELS } = require("../shared/ipc");
 
 contextBridge.exposeInMainWorld("appApi", {
+  filetransfer: {
+    start(dateText) {
+      return ipcRenderer.invoke(IPC_CHANNELS.startFileTransfer, dateText);
+    },
+  },
   versions: {
     node: process.versions.node,
     chrome: process.versions.chrome,
