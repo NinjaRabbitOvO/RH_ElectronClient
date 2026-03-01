@@ -1,28 +1,21 @@
 const homeWebview = document.getElementById("home-webview");
 const navButtons = Array.from(document.querySelectorAll(".nav-button"));
-const pages = Array.from(document.querySelectorAll(".page"));
 
-function setActivePage(pageName) {
+function renderActiveNavigation() {
+  const currentPage = document.body.dataset.currentPage;
+
   navButtons.forEach((button) => {
-    const isActive = button.dataset.pageTarget === pageName;
+    const isActive = button.dataset.pageLink === currentPage;
     button.classList.toggle("is-active", isActive);
-  });
-
-  pages.forEach((page) => {
-    const isActive = page.dataset.page === pageName;
-    page.classList.toggle("is-active", isActive);
-  });
-}
-
-function bindNavigation() {
-  navButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      setActivePage(button.dataset.pageTarget);
-    });
+    button.setAttribute("aria-current", isActive ? "page" : "false");
   });
 }
 
 function bindHomeWebview() {
+  if (!homeWebview) {
+    return;
+  }
+
   homeWebview.addEventListener("dom-ready", () => {
   });
 
@@ -31,5 +24,5 @@ function bindHomeWebview() {
   });
 }
 
-bindNavigation();
+renderActiveNavigation();
 bindHomeWebview();

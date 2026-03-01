@@ -4,28 +4,19 @@
     <meta charset="UTF-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://www.google.com https://*.google.com; child-src https://www.google.com https://*.google.com; frame-src https://www.google.com https://*.google.com"
+      content="default-src 'self'; script-src 'self'; style-src 'self'"
     />
     <meta
       http-equiv="X-Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://www.google.com https://*.google.com; child-src https://www.google.com https://*.google.com; frame-src https://www.google.com https://*.google.com"
+      content="default-src 'self'; script-src 'self'; style-src 'self'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RH Electron Client</title>
+    <title>RH Electron Client - Filetransfer</title>
     <link rel="stylesheet" href="./shell.css" />
   </head>
-  <body data-current-page="home">
+  <body data-current-page="filetransfer">
     <main class="app-shell">
       <section class="page is-active">
-        <webview
-          id="home-webview"
-          class="home-webview"
-          src="https://www.google.com"
-          partition="persist:home-remote"
-        ></webview>
-      </section>
-
-      <section class="page" data-page="filetransfer">
         <div class="page-head">
           <div>
             <p class="eyebrow">Page</p>
@@ -34,18 +25,6 @@
         </div>
         <div class="surface placeholder-surface">
           <p class="placeholder-label">filetransfer</p>
-        </div>
-      </section>
-
-      <section class="page" data-page="info">
-        <div class="page-head">
-          <div>
-            <p class="eyebrow">Page</p>
-            <h2>Info</h2>
-          </div>
-        </div>
-        <div class="surface placeholder-surface">
-          <p class="placeholder-label">info</p>
         </div>
       </section>
     </main>

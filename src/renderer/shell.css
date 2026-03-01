@@ -133,6 +133,7 @@ h2 {
   border-radius: 16px;
   background: transparent;
   color: #49647d;
+  text-decoration: none;
   cursor: pointer;
   transition:
     transform 140ms ease,
