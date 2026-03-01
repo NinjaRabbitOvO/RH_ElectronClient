@@ -11,6 +11,9 @@ function createMainWindow() {
     show: false,
     backgroundColor: "#f4f1ea",
     webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
       webviewTag: true,
       preload: path.join(__dirname, "..", "..", "preload", "index.js"),
     },

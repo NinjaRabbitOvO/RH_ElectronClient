@@ -1,6 +1,13 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-const { IPC_CHANNELS } = require("../shared/ipc");
+// Keep preload self-contained so it can still run under Electron's sandboxed
+// preload environment without requiring local CommonJS modules.
+const IPC_CHANNELS = {
+  startFileTransfer: "app:start-file-transfer",
+  startUdpTransfer: "app:start-udp-transfer",
+  transferEvent: "app:transfer-event",
+  ping: "app:ping",
+};
 
 contextBridge.exposeInMainWorld("appApi", {
   filetransfer: {

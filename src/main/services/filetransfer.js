@@ -12,7 +12,7 @@ function normalizeDateInput(value) {
     throw new Error("A transfer date is required.");
   }
 
-  const normalized = value.replace(/-/g, "").trim();
+  const normalized = value.replace(/\D/g, "").trim();
 
   if (!/^\d{8}$/.test(normalized)) {
     throw new Error("Transfer date must be in YYYYMMDD or YYYY-MM-DD format.");

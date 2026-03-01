@@ -22,6 +22,8 @@ const summaryTotalBytes = document.getElementById("summary-total-bytes");
 const summaryTotalDuration = document.getElementById("summary-total-duration");
 const summaryAverageRate = document.getElementById("summary-average-rate");
 const summaryExtra = document.getElementById("summary-extra");
+const filetransferApi =
+  window.appApi && window.appApi.filetransfer ? window.appApi.filetransfer : null;
 
 const TRANSFER_MODES = {
   tcp: {
@@ -194,6 +196,11 @@ function getDefaultTransferDate() {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function normalizeTransferDateInput(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits.length === 8 ? digits : "";
 }
 
 function formatBytes(value) {
@@ -377,10 +384,16 @@ async function startTransfer(modeKey) {
     return;
   }
 
-  const selectedDate = transferDateInput.value;
+  const selectedDate = normalizeTransferDateInput(transferDateInput.value);
 
   if (!selectedDate) {
-    transferActionStatus.textContent = "Please choose a transfer date first.";
+    transferActionStatus.textContent = "Please choose a valid transfer date first.";
+    return;
+  }
+
+  if (!filetransferApi) {
+    transferActionStatus.textContent = "Transfer API is unavailable. Restart the app to reload preload scripts.";
+    transferLog.textContent = "Renderer could not access window.appApi.filetransfer.";
     return;
   }
 
@@ -389,13 +402,13 @@ async function startTransfer(modeKey) {
   transferButton.disabled = true;
   udpTransferButton.disabled = true;
   transferActionStatus.textContent = mode.runningText;
-  transferLog.textContent = `${mode.launchLabel}\n`;
+  transferLog.textContent = `${mode.launchLabel}\nSelected date: ${selectedDate}\n`;
 
   try {
     const result =
       modeKey === "udp"
-        ? await window.appApi.filetransfer.startUdp(selectedDate)
-        : await window.appApi.filetransfer.start(selectedDate);
+        ? await filetransferApi.startUdp(selectedDate)
+        : await filetransferApi.start(selectedDate);
 
     if (!result.ok) {
       transferActionStatus.textContent = result.error || mode.failText;
@@ -421,43 +434,48 @@ function bindTransferLauncher() {
     transferDateInput.value = getDefaultTransferDate();
   }
 
-  window.appApi.filetransfer.onEvent((payload) => {
-    const mode = TRANSFER_MODES[payload.mode] || TRANSFER_MODES[currentTransferMode];
+  if (filetransferApi && typeof filetransferApi.onEvent === "function") {
+    filetransferApi.onEvent((payload) => {
+      const mode = TRANSFER_MODES[payload.mode] || TRANSFER_MODES[currentTransferMode];
 
-    if (payload.type === "started") {
-      if (payload.mode) {
-        renderTransferMode(payload.mode);
+      if (payload.type === "started") {
+        if (payload.mode) {
+          renderTransferMode(payload.mode);
+        }
+        appendTransferLog(`> ${payload.command}\n`);
+        transferActionStatus.textContent = mode.runningText;
+        return;
       }
-      appendTransferLog(`> ${payload.command}\n`);
-      transferActionStatus.textContent = mode.runningText;
-      return;
-    }
 
-    if (payload.type === "stdout" || payload.type === "stderr") {
-      consumeTransferChunk(payload.chunk);
-      return;
-    }
-
-    if (payload.type === "error") {
-      appendTransferLog(`\n${payload.message}\n`);
-      transferActionStatus.textContent = mode.failText;
-      transferButton.disabled = false;
-      udpTransferButton.disabled = false;
-      return;
-    }
-
-    if (payload.type === "exit") {
-      if (transferLineBuffer) {
-        consumeTransferChunk("\n");
+      if (payload.type === "stdout" || payload.type === "stderr") {
+        consumeTransferChunk(payload.chunk);
+        return;
       }
-      appendTransferLog(
-        `\nProcess exited with code ${payload.code}${payload.signal ? ` (${payload.signal})` : ""}.\n`,
-      );
-      transferActionStatus.textContent = payload.ok ? mode.successText : mode.failText;
-      transferButton.disabled = false;
-      udpTransferButton.disabled = false;
-    }
-  });
+
+      if (payload.type === "error") {
+        appendTransferLog(`\n${payload.message}\n`);
+        transferActionStatus.textContent = mode.failText;
+        transferButton.disabled = false;
+        udpTransferButton.disabled = false;
+        return;
+      }
+
+      if (payload.type === "exit") {
+        if (transferLineBuffer) {
+          consumeTransferChunk("\n");
+        }
+        appendTransferLog(
+          `\nProcess exited with code ${payload.code}${payload.signal ? ` (${payload.signal})` : ""}.\n`,
+        );
+        transferActionStatus.textContent = payload.ok ? mode.successText : mode.failText;
+        transferButton.disabled = false;
+        udpTransferButton.disabled = false;
+      }
+    });
+  } else {
+    transferActionStatus.textContent =
+      "Realtime transfer events are unavailable until the app is restarted.";
+  }
 
   renderTransferMode(currentTransferMode);
 
