@@ -1,5 +1,10 @@
 node_modules/
 out/
+__pycache__/
+*.py[cod]
+
+# Generated receive output
+Re????????/
 
 # Logs
 logs/
