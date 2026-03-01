@@ -242,6 +242,10 @@ function renderTransferLog() {
     return;
   }
 
+  const distanceFromBottom =
+    transferLog.scrollHeight - transferLog.scrollTop - transferLog.clientHeight;
+  const shouldStickToBottom = distanceFromBottom <= 24;
+
   const frames = transferLogLines.slice();
 
   if (transferLiveLine) {
@@ -249,7 +253,16 @@ function renderTransferLog() {
   }
 
   transferLog.textContent = frames.join("\n");
-  transferLog.scrollTop = transferLog.scrollHeight;
+
+  if (shouldStickToBottom) {
+    transferLog.scrollTop = transferLog.scrollHeight;
+    return;
+  }
+
+  transferLog.scrollTop = Math.max(
+    0,
+    transferLog.scrollHeight - transferLog.clientHeight - distanceFromBottom,
+  );
 }
 
 function updateText(node, text) {
