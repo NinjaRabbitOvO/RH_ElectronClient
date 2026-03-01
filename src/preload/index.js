@@ -7,6 +7,9 @@ contextBridge.exposeInMainWorld("appApi", {
     start(dateText) {
       return ipcRenderer.invoke(IPC_CHANNELS.startFileTransfer, dateText);
     },
+    startUdp(dateText) {
+      return ipcRenderer.invoke(IPC_CHANNELS.startUdpTransfer, dateText);
+    },
   },
   versions: {
     node: process.versions.node,

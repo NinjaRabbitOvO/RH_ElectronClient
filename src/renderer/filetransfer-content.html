@@ -23,15 +23,15 @@
             <p class="eyebrow">Receiver</p>
             <h2>Filetransfer Console</h2>
             <p class="hero-text">
-              Visual shell for the current Python receiver: connect to the ESP
-              hotspot endpoint, request a date batch, stream file frames, and
-              track receive throughput.
+              Visual shell for the Python receivers. Switch between the TCP
+              stream client and the UDP transfer client, then inspect the live
+              execution output below.
             </p>
           </div>
           <div class="hero-endpoint">
-            <span class="endpoint-label">Remote Endpoint</span>
-            <strong>192.168.4.1:27050</strong>
-            <span class="endpoint-status">TCP Connected Flow</span>
+            <span class="endpoint-label">Active Protocol</span>
+            <strong id="protocol-endpoint">192.168.4.1:27050</strong>
+            <span id="protocol-status" class="endpoint-status">TCP Connected Flow</span>
           </div>
         </header>
 
@@ -45,9 +45,14 @@
               <span class="field-label">Transfer Date</span>
               <input id="transfer-date" type="date" />
             </label>
-            <button id="start-transfer" class="transfer-button" type="button">
-              Start Transfer
-            </button>
+            <div class="launch-actions">
+              <button id="start-transfer" class="transfer-button" type="button">
+                Start Transfer
+              </button>
+              <button id="start-udp-transfer" class="transfer-button transfer-button-udp" type="button">
+                UDP
+              </button>
+            </div>
           </div>
           <p id="transfer-action-status" class="action-status">
             Choose a date, then launch the Python receiver.
@@ -63,20 +68,20 @@
             </div>
             <div class="metric-grid">
               <article class="metric-tile">
+                <span class="metric-label">Transport</span>
+                <strong id="metric-transport">TCP</strong>
+              </article>
+              <article class="metric-tile">
                 <span class="metric-label">Socket Read</span>
-                <strong>8192 B</strong>
+                <strong id="metric-read">8192 B</strong>
               </article>
               <article class="metric-tile">
-                <span class="metric-label">File Chunk</span>
-                <strong>32768 B</strong>
+                <span class="metric-label">Payload Block</span>
+                <strong id="metric-block">32768 B</strong>
               </article>
               <article class="metric-tile">
-                <span class="metric-label">DK Length</span>
-                <strong>32 B</strong>
-              </article>
-              <article class="metric-tile">
-                <span class="metric-label">Complete Cmd</span>
-                <strong>0x21</strong>
+                <span class="metric-label">Completion</span>
+                <strong id="metric-finish">0x21</strong>
               </article>
             </div>
           </section>
@@ -84,51 +89,15 @@
           <section class="surface transfer-card command-card">
             <div class="card-head">
               <p class="eyebrow">Protocol</p>
-              <h3>Command Stream</h3>
+              <h3 id="protocol-title">Command Stream</h3>
             </div>
-            <div class="command-list">
-              <div class="command-item">
-                <span class="command-code">0x11</span>
-                <div>
-                  <strong>Request DK</strong>
-                  <p>Initial handshake before the first date batch starts.</p>
-                </div>
-              </div>
-              <div class="command-item">
-                <span class="command-code">0x12</span>
-                <div>
-                  <strong>Receive DK</strong>
-                  <p>Reads a fixed 32-byte key block from the server.</p>
-                </div>
-              </div>
-              <div class="command-item">
-                <span class="command-code">0x02</span>
-                <div>
-                  <strong>Files Count</strong>
-                  <p>Receives the total file count for the selected date.</p>
-                </div>
-              </div>
-              <div class="command-item">
-                <span class="command-code">0x03</span>
-                <div>
-                  <strong>File Payload</strong>
-                  <p>Reads file name, size, then writes the stream in chunks.</p>
-                </div>
-              </div>
-              <div class="command-item">
-                <span class="command-code">0x04</span>
-                <div>
-                  <strong>End Of Files</strong>
-                  <p>Marks the end of the current date batch.</p>
-                </div>
-              </div>
-            </div>
+            <div id="protocol-commands" class="command-list"></div>
           </section>
 
           <section class="surface transfer-card queue-card">
             <div class="card-head">
               <p class="eyebrow">Date Queue</p>
-              <h3>Request Pattern</h3>
+              <h3 id="queue-title">Request Pattern</h3>
             </div>
             <div class="queue-strip">
               <span class="queue-chip">20260301</span>
@@ -137,8 +106,8 @@
             </div>
             <div class="folder-preview">
               <span class="folder-label">Output Folder Rule</span>
-              <strong>REYYYYMMDD</strong>
-              <p>Each input date maps to a dedicated receive directory.</p>
+              <strong id="folder-rule">REYYYYMMDD</strong>
+              <p id="folder-copy">Each input date maps to a dedicated receive directory.</p>
             </div>
           </section>
 

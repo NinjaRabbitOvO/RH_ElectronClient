@@ -3,7 +3,8 @@ const path = require("node:path");
 const { promisify } = require("node:util");
 
 const execFileAsync = promisify(execFile);
-const SCRIPT_PATH = path.join(__dirname, "..", "..", "..", "PlusWifi_Client.py");
+const TCP_SCRIPT_PATH = path.join(__dirname, "..", "..", "..", "PlusWifi_Client.py");
+const UDP_SCRIPT_PATH = path.join(__dirname, "..", "..", "..", "udp_file_client.py");
 const EXECUTION_TIMEOUT_MS = 10 * 60 * 1000;
 
 function normalizeDateInput(value) {
@@ -22,18 +23,18 @@ function normalizeDateInput(value) {
 
 async function tryExecute(command, args) {
   return execFileAsync(command, args, {
-    cwd: path.dirname(SCRIPT_PATH),
+    cwd: path.dirname(TCP_SCRIPT_PATH),
     encoding: "utf8",
     timeout: EXECUTION_TIMEOUT_MS,
     windowsHide: true,
   });
 }
 
-async function runPythonTransfer(dateText) {
+async function runScript(scriptPath, dateText) {
   const transferDate = normalizeDateInput(dateText);
   const attempts = [
-    { command: "py", args: ["-3", SCRIPT_PATH, transferDate] },
-    { command: "python", args: [SCRIPT_PATH, transferDate] },
+    { command: "py", args: ["-3", scriptPath, transferDate] },
+    { command: "python", args: [scriptPath, transferDate] },
   ];
 
   let lastError = null;
@@ -75,6 +76,15 @@ async function runPythonTransfer(dateText) {
   };
 }
 
+async function runPythonTransfer(dateText) {
+  return runScript(TCP_SCRIPT_PATH, dateText);
+}
+
+async function runUdpTransfer(dateText) {
+  return runScript(UDP_SCRIPT_PATH, dateText);
+}
+
 module.exports = {
   runPythonTransfer,
+  runUdpTransfer,
 };
