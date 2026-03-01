@@ -13,19 +13,157 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RH Electron Client - Info</title>
     <link rel="stylesheet" href="./shell.css" />
+    <link rel="stylesheet" href="./info.css" />
   </head>
   <body data-current-page="info">
     <main class="app-shell">
-      <section class="page is-active">
-        <div class="page-head">
-          <div>
-            <p class="eyebrow">Page</p>
-            <h2>Info</h2>
-          </div>
-        </div>
-        <div class="surface placeholder-surface">
-          <p class="placeholder-label">info</p>
-        </div>
+      <section class="page is-active info-page">
+        <section class="info-layout">
+          <section class="surface info-form-card">
+            <header class="info-intro">
+              <p class="eyebrow">Contact</p>
+              <h2>Talk To Our Team</h2>
+              <p class="info-intro-copy">
+                Complete the form below to have a member of our sales team address
+                your business needs.
+              </p>
+            </header>
+
+            <form class="info-form" action="#" method="get">
+              <label class="info-field">
+                <span>Who would you like to talk to?*</span>
+                <select name="audience">
+                  <option value="">Please Select...</option>
+                  <option>Sales Team</option>
+                  <option>Partnership Team</option>
+                  <option>Technical Consultant</option>
+                </select>
+              </label>
+
+              <label class="info-field">
+                <span>What is your solution of interest?*</span>
+                <select name="solution">
+                  <option value="">Please Select...</option>
+                  <option>Wireless Transfer</option>
+                  <option>Data Integration</option>
+                  <option>Device Support</option>
+                </select>
+              </label>
+
+              <div class="info-two-up">
+                <label class="info-field">
+                  <span>First Name*</span>
+                  <input type="text" name="first_name" autocomplete="given-name" />
+                </label>
+
+                <label class="info-field">
+                  <span>Last Name*</span>
+                  <input type="text" name="last_name" autocomplete="family-name" />
+                </label>
+              </div>
+
+              <label class="info-field">
+                <span>Company Email*</span>
+                <input type="email" name="company_email" autocomplete="email" />
+              </label>
+
+              <label class="info-field">
+                <span>Company*</span>
+                <input type="text" name="company" autocomplete="organization" />
+              </label>
+
+              <div class="info-two-up">
+                <label class="info-field">
+                  <span>Job Title*</span>
+                  <input type="text" name="job_title" autocomplete="organization-title" />
+                </label>
+
+                <label class="info-field">
+                  <span>Phone Number*</span>
+                  <input type="tel" name="phone" autocomplete="tel" />
+                </label>
+              </div>
+
+              <div class="info-two-up">
+                <label class="info-field">
+                  <span>Country*</span>
+                  <select name="country">
+                    <option value="">Please Select...</option>
+                    <option>United Kingdom</option>
+                    <option>United States</option>
+                    <option>Germany</option>
+                    <option>China</option>
+                  </select>
+                </label>
+
+                <label class="info-field">
+                  <span>State or Province</span>
+                  <select name="state">
+                    <option value="">Please Select...</option>
+                    <option>Greater London</option>
+                    <option>California</option>
+                    <option>New York</option>
+                    <option>Ontario</option>
+                  </select>
+                </label>
+              </div>
+
+              <label class="info-field">
+                <span>Additional Information</span>
+                <textarea name="details" rows="4"></textarea>
+              </label>
+
+              <label class="info-consent">
+                <input type="checkbox" name="marketing" />
+                <span>Send me Broadcom communications</span>
+              </label>
+
+              <p class="info-policy">
+                I agree to receive commercial messages from Group-10. I understand
+                my personal data is processed according to Group-10&apos;s Privacy
+                Policy and I may unsubscribe from emailed communications at any
+                time.
+              </p>
+
+              <button class="info-submit" type="submit">Submit</button>
+            </form>
+          </section>
+
+          <aside class="info-sidebar">
+            <section class="surface info-image-card">
+              <div
+                class="info-hero-image"
+                role="img"
+                aria-label="Reserved hero image slot"
+              ></div>
+              <p class="asset-path">
+                Reserved image path: <code>./assets/info/campus-photo.jpg</code>
+              </p>
+            </section>
+
+            <section class="surface info-support-card">
+              <div class="support-icon-frame" aria-hidden="true">
+                <span class="support-envelope"></span>
+              </div>
+              <p class="asset-path">
+                Reserved icon path: <code>./assets/info/support-icon.png</code>
+              </p>
+              <h3>Contact Support</h3>
+              <p class="support-copy">
+                For customer service-related questions or product support, please
+                visit Contact Support.
+              </p>
+              <a
+                class="support-link"
+                href="https://mail.google.com/mail/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Click Here
+              </a>
+            </section>
+          </aside>
+        </section>
       </section>
     </main>
 

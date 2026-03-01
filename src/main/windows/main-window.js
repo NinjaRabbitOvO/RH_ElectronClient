@@ -1,6 +1,6 @@
 const path = require("node:path");
 
-const { BrowserWindow } = require("electron");
+const { BrowserWindow, shell } = require("electron");
 
 function createMainWindow() {
   const window = new BrowserWindow({
@@ -21,6 +21,15 @@ function createMainWindow() {
 
   window.once("ready-to-show", () => {
     window.show();
+  });
+
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      shell.openExternal(url);
+      return { action: "deny" };
+    }
+
+    return { action: "allow" };
   });
 
   window.loadFile(path.join(__dirname, "..", "..", "renderer", "shell.html"));
