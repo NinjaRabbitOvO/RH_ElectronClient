@@ -1,8 +1,5 @@
 const homeWebview = document.getElementById("home-webview");
 const navButtons = Array.from(document.querySelectorAll(".nav-button"));
-const filetransferGate = document.getElementById("filetransfer-gate");
-const filetransferConfirm = document.getElementById("filetransfer-confirm");
-const filetransferContent = document.getElementById("filetransfer-content");
 
 function renderActiveNavigation() {
   const currentPage = document.body.dataset.currentPage;
@@ -27,17 +24,5 @@ function bindHomeWebview() {
   });
 }
 
-function bindFiletransferGate() {
-  if (!filetransferGate || !filetransferConfirm || !filetransferContent) {
-    return;
-  }
-
-  filetransferConfirm.addEventListener("click", () => {
-    filetransferGate.classList.add("is-hidden");
-    filetransferContent.classList.remove("is-hidden");
-  });
-}
-
 renderActiveNavigation();
 bindHomeWebview();
-bindFiletransferGate();

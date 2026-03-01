@@ -62,10 +62,6 @@ h2 {
   display: grid;
 }
 
-.is-hidden {
-  display: none;
-}
-
 .page-head {
   display: flex;
   justify-content: space-between;
@@ -133,6 +129,9 @@ h2 {
 }
 
 .confirm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 132px;
   min-height: 48px;
   padding: 0 22px;
@@ -143,6 +142,7 @@ h2 {
   font: inherit;
   font-weight: 700;
   letter-spacing: 0.08em;
+  text-decoration: none;
   cursor: pointer;
   box-shadow: 0 14px 30px rgba(94, 166, 222, 0.24);
   transition:
@@ -159,11 +159,6 @@ h2 {
 
 .confirm-button:active {
   transform: translateY(0);
-}
-
-.filetransfer-content {
-  display: grid;
-  gap: 18px;
 }
 
 .floating-nav {
