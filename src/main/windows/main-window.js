@@ -11,6 +11,7 @@ function createMainWindow() {
     show: false,
     backgroundColor: "#f4f1ea",
     webPreferences: {
+      webviewTag: true,
       preload: path.join(__dirname, "..", "..", "preload", "index.js"),
     },
   });
@@ -19,7 +20,7 @@ function createMainWindow() {
     window.show();
   });
 
-  window.loadFile(path.join(__dirname, "..", "..", "renderer", "index.html"));
+  window.loadFile(path.join(__dirname, "..", "..", "renderer", "shell.html"));
 
   return window;
 }

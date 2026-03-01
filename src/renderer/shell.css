@@ -1,0 +1,191 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #1c2733;
+  background:
+    radial-gradient(circle at top right, rgba(99, 172, 229, 0.18), transparent 28%),
+    linear-gradient(180deg, #f7f9fc 0%, #eff3f8 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 4% 6%, rgba(90, 166, 222, 0.18), transparent 18%),
+    linear-gradient(180deg, #f7f9fc 0%, #edf2f8 100%);
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 16px 108px 16px 16px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #4b84b8;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  color: #132230;
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1;
+}
+
+h2 {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+.page {
+  display: none;
+  gap: 18px;
+  min-height: calc(100vh - 32px);
+}
+
+.page.is-active {
+  display: grid;
+}
+
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.surface {
+  border: 1px solid rgba(104, 136, 168, 0.12);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 48px rgba(57, 84, 120, 0.1);
+}
+
+.home-webview {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 32px);
+  border-radius: 20px;
+  background: transparent;
+}
+
+.placeholder-surface {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 210px);
+  background:
+    linear-gradient(135deg, rgba(126, 181, 230, 0.14) 0%, rgba(255, 255, 255, 0.92) 40%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(75, 132, 184, 0.04) 0,
+      rgba(75, 132, 184, 0.04) 14px,
+      transparent 14px,
+      transparent 28px
+    );
+}
+
+.placeholder-label {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 4.2rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2f5677;
+}
+
+.floating-nav {
+  position: fixed;
+  top: 50%;
+  right: 24px;
+  z-index: 20;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  transform: translateY(-50%);
+  border: 1px solid rgba(104, 136, 168, 0.16);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 24px 56px rgba(57, 84, 120, 0.18);
+}
+
+.nav-button {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 68px;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: #49647d;
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.nav-button:hover {
+  transform: translateX(-2px);
+  background: rgba(75, 132, 184, 0.08);
+}
+
+.nav-button.is-active {
+  background: linear-gradient(180deg, #edf6fe 0%, #d9ebfa 100%);
+  color: #123a5d;
+}
+
+.nav-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: rgba(75, 132, 184, 0.12);
+  font-weight: 800;
+}
+
+.nav-text {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    padding: 12px 88px 12px 12px;
+  }
+
+  .home-webview,
+  .placeholder-surface {
+    min-height: calc(100vh - 24px);
+  }
+
+  .floating-nav {
+    right: 12px;
+  }
+
+  .nav-button {
+    width: 60px;
+  }
+
+  .nav-text {
+    font-size: 0.68rem;
+  }
+}

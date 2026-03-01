@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://www.google.com https://*.google.com; child-src https://www.google.com https://*.google.com; frame-src https://www.google.com https://*.google.com"
+    />
+    <meta
+      http-equiv="X-Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://www.google.com https://*.google.com; child-src https://www.google.com https://*.google.com; frame-src https://www.google.com https://*.google.com"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RH Electron Client</title>
+    <link rel="stylesheet" href="./shell.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="page is-active" data-page="home">
+        <webview
+          id="home-webview"
+          class="home-webview"
+          src="https://www.google.com"
+          partition="persist:home-remote"
+        ></webview>
+      </section>
+
+      <section class="page" data-page="filetransfer">
+        <div class="page-head">
+          <div>
+            <p class="eyebrow">Page</p>
+            <h2>Filetransfer</h2>
+          </div>
+        </div>
+        <div class="surface placeholder-surface">
+          <p class="placeholder-label">filetransfer</p>
+        </div>
+      </section>
+
+      <section class="page" data-page="info">
+        <div class="page-head">
+          <div>
+            <p class="eyebrow">Page</p>
+            <h2>Info</h2>
+          </div>
+        </div>
+        <div class="surface placeholder-surface">
+          <p class="placeholder-label">info</p>
+        </div>
+      </section>
+    </main>
+
+    <nav class="floating-nav" aria-label="Primary navigation">
+      <button class="nav-button is-active" type="button" data-page-target="home" title="Home">
+        <span class="nav-icon">H</span>
+        <span class="nav-text">Home</span>
+      </button>
+      <button
+        class="nav-button"
+        type="button"
+        data-page-target="filetransfer"
+        title="Filetransfer"
+      >
+        <span class="nav-icon">F</span>
+        <span class="nav-text">File</span>
+      </button>
+      <button class="nav-button" type="button" data-page-target="info" title="Info">
+        <span class="nav-icon">I</span>
+        <span class="nav-text">Info</span>
+      </button>
+    </nav>
+
+    <script src="./shell.js"></script>
+  </body>
+</html>
