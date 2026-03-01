@@ -22,6 +22,7 @@ const summaryTotalBytes = document.getElementById("summary-total-bytes");
 const summaryTotalDuration = document.getElementById("summary-total-duration");
 const summaryAverageRate = document.getElementById("summary-average-rate");
 const summaryExtra = document.getElementById("summary-extra");
+const TRANSFER_EVENT_PREFIX = "@@EVENT@@ ";
 const filetransferApi =
   window.appApi && window.appApi.filetransfer ? window.appApi.filetransfer : null;
 
@@ -82,7 +83,9 @@ const TRANSFER_MODES = {
 };
 
 let currentTransferMode = "tcp";
-let transferLineBuffer = "";
+let transferStreamBuffer = "";
+let transferLogLines = [];
+let transferLiveLine = "";
 let transferRuntime = {
   filesCount: 0,
   completedFiles: 0,
@@ -231,15 +234,21 @@ function formatDuration(seconds) {
 }
 
 function appendTransferLog(text) {
-  if (!transferLog || !text) {
+  applyTransferConsoleText(text);
+}
+
+function renderTransferLog() {
+  if (!transferLog) {
     return;
   }
 
-  if (transferLog.textContent === "Waiting for execution...") {
-    transferLog.textContent = "";
+  const frames = transferLogLines.slice();
+
+  if (transferLiveLine) {
+    frames.push(transferLiveLine);
   }
 
-  transferLog.textContent += text;
+  transferLog.textContent = frames.join("\n");
   transferLog.scrollTop = transferLog.scrollHeight;
 }
 
@@ -262,7 +271,9 @@ function updateProgress(percent) {
 }
 
 function resetTransferDashboard(modeKey) {
-  transferLineBuffer = "";
+  transferStreamBuffer = "";
+  transferLogLines = [];
+  transferLiveLine = "";
   transferRuntime = {
     filesCount: 0,
     completedFiles: 0,
@@ -279,6 +290,53 @@ function resetTransferDashboard(modeKey) {
   updateText(summaryAverageRate, "0 B/s");
   updateText(summaryExtra, "0 / 0");
   updateProgress(0);
+}
+
+function applyTransferConsoleText(text) {
+  if (!transferLog || !text) {
+    return;
+  }
+
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+
+    if (character === "\r") {
+      if (text[index + 1] === "\n") {
+        transferLogLines.push(transferLiveLine);
+        transferLiveLine = "";
+        index += 1;
+      } else {
+        transferLiveLine = "";
+      }
+      continue;
+    }
+
+    if (character === "\n") {
+      transferLogLines.push(transferLiveLine);
+      transferLiveLine = "";
+      continue;
+    }
+
+    transferLiveLine += character;
+  }
+
+  renderTransferLog();
+}
+
+function tryHandleStructuredTransferEvent(rawLine) {
+  const payloadText = rawLine.trim();
+
+  if (!payloadText) {
+    return true;
+  }
+
+  try {
+    handleStructuredTransferEvent(JSON.parse(payloadText));
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
 }
 
 function handleStructuredTransferEvent(eventPayload) {
@@ -351,27 +409,41 @@ function consumeTransferChunk(chunk) {
     return;
   }
 
-  transferLineBuffer += String(chunk).replace(/\r/g, "\n");
-  const lines = transferLineBuffer.split("\n");
-  transferLineBuffer = lines.pop() || "";
+  transferStreamBuffer += String(chunk);
 
-  lines.forEach((line) => {
-    if (!line) {
-      appendTransferLog("\n");
+  while (transferStreamBuffer) {
+    const eventIndex = transferStreamBuffer.indexOf(TRANSFER_EVENT_PREFIX);
+
+    if (eventIndex === -1) {
+      applyTransferConsoleText(transferStreamBuffer);
+      transferStreamBuffer = "";
       return;
     }
 
-    if (line.startsWith("@@EVENT@@ ")) {
-      try {
-        handleStructuredTransferEvent(JSON.parse(line.slice(10)));
-      } catch (error) {
-        console.error(error);
-      }
+    if (eventIndex > 0) {
+      applyTransferConsoleText(transferStreamBuffer.slice(0, eventIndex));
+      transferStreamBuffer = transferStreamBuffer.slice(eventIndex);
+    }
+
+    const lineBreakMatch = transferStreamBuffer.match(/\r\n|\r|\n/);
+    if (!lineBreakMatch || typeof lineBreakMatch.index !== "number") {
       return;
     }
 
-    appendTransferLog(`${line}\n`);
-  });
+    const lineBreakIndex = lineBreakMatch.index;
+    const payloadText = transferStreamBuffer
+      .slice(TRANSFER_EVENT_PREFIX.length, lineBreakIndex);
+
+    if (!tryHandleStructuredTransferEvent(payloadText)) {
+      applyTransferConsoleText(
+        `${TRANSFER_EVENT_PREFIX}${payloadText}${lineBreakMatch[0]}`,
+      );
+    }
+
+    transferStreamBuffer = transferStreamBuffer.slice(
+      lineBreakIndex + lineBreakMatch[0].length,
+    );
+  }
 }
 
 async function startTransfer(modeKey) {
@@ -402,7 +474,10 @@ async function startTransfer(modeKey) {
   transferButton.disabled = true;
   udpTransferButton.disabled = true;
   transferActionStatus.textContent = mode.runningText;
-  transferLog.textContent = `${mode.launchLabel}\nSelected date: ${selectedDate}\n`;
+  transferStreamBuffer = "";
+  transferLogLines = [];
+  transferLiveLine = "";
+  appendTransferLog(`${mode.launchLabel}\nSelected date: ${selectedDate}\n`);
 
   try {
     const result =
@@ -418,7 +493,10 @@ async function startTransfer(modeKey) {
     }
   } catch (error) {
     transferActionStatus.textContent = "Transfer launch failed before the receiver started.";
-    transferLog.textContent = error && error.message ? error.message : String(error);
+    transferStreamBuffer = "";
+    transferLogLines = [];
+    transferLiveLine = "";
+    appendTransferLog(error && error.message ? error.message : String(error));
     transferButton.disabled = false;
     udpTransferButton.disabled = false;
     console.error(error);
@@ -461,7 +539,7 @@ function bindTransferLauncher() {
       }
 
       if (payload.type === "exit") {
-        if (transferLineBuffer) {
+        if (transferStreamBuffer || transferLiveLine) {
           consumeTransferChunk("\n");
         }
         appendTransferLog(
