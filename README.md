@@ -7,6 +7,16 @@ Electron Forge based desktop client for the HR Engry Lab project.
 - Node.js 20+
 - npm
 
+## Project Structure
+
+```text
+src/
+  main/        # Electron main process
+  preload/     # Context bridge for renderer access
+  renderer/    # HTML/CSS/JS for the desktop UI
+  shared/      # Shared constants between processes
+```
+
 ## Development
 
 ```bash

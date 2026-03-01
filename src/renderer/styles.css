@@ -1,0 +1,83 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #1f2933;
+  background:
+    radial-gradient(circle at top right, rgba(218, 165, 32, 0.22), transparent 32%),
+    linear-gradient(135deg, #f7f2e7 0%, #efe7d6 52%, #e5dcc8 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: grid;
+  gap: 24px;
+  padding: 40px 24px;
+  min-height: 100vh;
+}
+
+.hero,
+.status-card {
+  max-width: 760px;
+  border: 1px solid rgba(120, 96, 52, 0.12);
+  border-radius: 24px;
+  padding: 28px;
+  background: rgba(255, 252, 247, 0.82);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 16px 40px rgba(66, 46, 12, 0.08);
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8b5e34;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  color: #372718;
+}
+
+h1 {
+  font-size: clamp(2.2rem, 6vw, 4.2rem);
+  line-height: 1;
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+
+.subtitle,
+#runtime-info,
+#ping-result {
+  margin: 14px 0 0;
+  max-width: 60ch;
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 20px 16px;
+  }
+
+  .hero,
+  .status-card {
+    border-radius: 18px;
+    padding: 20px;
+  }
+}
