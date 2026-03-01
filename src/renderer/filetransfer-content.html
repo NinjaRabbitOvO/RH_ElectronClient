@@ -13,19 +13,173 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RH Electron Client - Filetransfer Content</title>
     <link rel="stylesheet" href="./shell.css" />
+    <link rel="stylesheet" href="./filetransfer-content.css" />
   </head>
   <body data-current-page="filetransfer">
     <main class="app-shell">
       <section class="page is-active">
-        <div class="page-head">
-          <div>
-            <p class="eyebrow">Page</p>
-            <h2>Filetransfer</h2>
+        <header class="transfer-hero surface">
+          <div class="hero-copy">
+            <p class="eyebrow">Receiver</p>
+            <h2>Filetransfer Console</h2>
+            <p class="hero-text">
+              Visual shell for the current Python receiver: connect to the ESP
+              hotspot endpoint, request a date batch, stream file frames, and
+              track receive throughput.
+            </p>
           </div>
-        </div>
-        <div class="surface placeholder-surface">
-          <p class="placeholder-label">filetransfer</p>
-        </div>
+          <div class="hero-endpoint">
+            <span class="endpoint-label">Remote Endpoint</span>
+            <strong>192.168.4.1:27050</strong>
+            <span class="endpoint-status">TCP Connected Flow</span>
+          </div>
+        </header>
+
+        <section class="transfer-grid">
+          <section class="surface transfer-card metrics-card">
+            <div class="card-head">
+              <p class="eyebrow">Runtime</p>
+              <h3>Transfer Parameters</h3>
+            </div>
+            <div class="metric-grid">
+              <article class="metric-tile">
+                <span class="metric-label">Socket Read</span>
+                <strong>8192 B</strong>
+              </article>
+              <article class="metric-tile">
+                <span class="metric-label">File Chunk</span>
+                <strong>32768 B</strong>
+              </article>
+              <article class="metric-tile">
+                <span class="metric-label">DK Length</span>
+                <strong>32 B</strong>
+              </article>
+              <article class="metric-tile">
+                <span class="metric-label">Complete Cmd</span>
+                <strong>0x21</strong>
+              </article>
+            </div>
+          </section>
+
+          <section class="surface transfer-card command-card">
+            <div class="card-head">
+              <p class="eyebrow">Protocol</p>
+              <h3>Command Stream</h3>
+            </div>
+            <div class="command-list">
+              <div class="command-item">
+                <span class="command-code">0x11</span>
+                <div>
+                  <strong>Request DK</strong>
+                  <p>Initial handshake before the first date batch starts.</p>
+                </div>
+              </div>
+              <div class="command-item">
+                <span class="command-code">0x12</span>
+                <div>
+                  <strong>Receive DK</strong>
+                  <p>Reads a fixed 32-byte key block from the server.</p>
+                </div>
+              </div>
+              <div class="command-item">
+                <span class="command-code">0x02</span>
+                <div>
+                  <strong>Files Count</strong>
+                  <p>Receives the total file count for the selected date.</p>
+                </div>
+              </div>
+              <div class="command-item">
+                <span class="command-code">0x03</span>
+                <div>
+                  <strong>File Payload</strong>
+                  <p>Reads file name, size, then writes the stream in chunks.</p>
+                </div>
+              </div>
+              <div class="command-item">
+                <span class="command-code">0x04</span>
+                <div>
+                  <strong>End Of Files</strong>
+                  <p>Marks the end of the current date batch.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="surface transfer-card queue-card">
+            <div class="card-head">
+              <p class="eyebrow">Date Queue</p>
+              <h3>Request Pattern</h3>
+            </div>
+            <div class="queue-strip">
+              <span class="queue-chip">20260301</span>
+              <span class="queue-chip">20260302</span>
+              <span class="queue-chip">20260303</span>
+            </div>
+            <div class="folder-preview">
+              <span class="folder-label">Output Folder Rule</span>
+              <strong>REYYYYMMDD</strong>
+              <p>Each input date maps to a dedicated receive directory.</p>
+            </div>
+          </section>
+
+          <section class="surface transfer-card receive-card">
+            <div class="card-head">
+              <p class="eyebrow">Receive State</p>
+              <h3>Current File Session</h3>
+            </div>
+            <div class="receive-grid">
+              <div class="receive-stat">
+                <span class="stat-caption">Current File</span>
+                <strong>example.bin</strong>
+              </div>
+              <div class="receive-stat">
+                <span class="stat-caption">File Size</span>
+                <strong>12.4 MB</strong>
+              </div>
+              <div class="receive-stat">
+                <span class="stat-caption">Write Speed</span>
+                <strong>8.52 MB/s</strong>
+              </div>
+              <div class="receive-stat">
+                <span class="stat-caption">Remaining</span>
+                <strong>0 B</strong>
+              </div>
+            </div>
+            <div class="progress-shell" aria-label="File transfer progress">
+              <div class="progress-bar"></div>
+            </div>
+            <div class="receive-notes">
+              <span class="note-pill">SocketReader.read_exact()</span>
+              <span class="note-pill">Buffered file writes</span>
+              <span class="note-pill">Per-file rate timing</span>
+            </div>
+          </section>
+
+          <section class="surface transfer-card summary-card">
+            <div class="card-head">
+              <p class="eyebrow">Summary</p>
+              <h3>Overall Transfer</h3>
+            </div>
+            <div class="summary-stack">
+              <div class="summary-row">
+                <span>Total Received</span>
+                <strong>248.7 MB</strong>
+              </div>
+              <div class="summary-row">
+                <span>Total Duration</span>
+                <strong>31.482 s</strong>
+              </div>
+              <div class="summary-row">
+                <span>Average Rate</span>
+                <strong>7.90 MB/s</strong>
+              </div>
+              <div class="summary-row">
+                <span>Final Action</span>
+                <strong>Send 0x21 and close socket</strong>
+              </div>
+            </div>
+          </section>
+        </section>
       </section>
     </main>
 
