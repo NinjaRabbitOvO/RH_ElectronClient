@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-02T16:11:46.322Z",
-  "headCommit": "40cb56d3cc603766060e01ee980ba48a826a4369",
+  "timestamp": "2026-03-02T16:34:44.426Z",
+  "headCommit": "b0845774806165149cfd441039c93b8245e75545",
   "baselines": {
     "projectBaselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
     "trackingStartCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
@@ -8,40 +8,40 @@
   },
   "projectTotals": {
     "baselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
-    "changedFiles": 25,
-    "writtenLines": 3479,
-    "deletedLines": 76,
-    "changeLines": 3555,
-    "totalCommitCount": 22,
-    "featureCommitCount": 10,
+    "changedFiles": 29,
+    "writtenLines": 3826,
+    "deletedLines": 73,
+    "changeLines": 3899,
+    "totalCommitCount": 23,
+    "featureCommitCount": 11,
     "adjustmentCommitCount": 8
   },
   "trackingTotals": {
     "baselineCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
-    "changedFiles": 4,
-    "writtenLines": 456,
-    "deletedLines": 5,
-    "changeLines": 461,
-    "totalCommitCount": 3,
-    "featureCommitCount": 0,
+    "changedFiles": 11,
+    "writtenLines": 808,
+    "deletedLines": 7,
+    "changeLines": 815,
+    "totalCommitCount": 4,
+    "featureCommitCount": 1,
     "adjustmentCommitCount": 1
   },
   "currentTotals": {
-    "totalLines": 3518,
+    "totalLines": 3868,
     "sourceFileCount": 18
   },
   "majorSourceFiles": [
     {
       "file": "src/renderer/shell.js",
-      "lines": 645
+      "lines": 785
+    },
+    {
+      "file": "src/renderer/filetransfer-content.css",
+      "lines": 576
     },
     {
       "file": "udp_file_client.py",
       "lines": 497
-    },
-    {
-      "file": "src/renderer/filetransfer-content.css",
-      "lines": 450
     },
     {
       "file": "tools/code-metrics.js",
@@ -56,20 +56,20 @@
       "lines": 242
     },
     {
+      "file": "src/renderer/filetransfer-content.html",
+      "lines": 222
+    },
+    {
       "file": "PlusWifi_Client.py",
       "lines": 214
     },
     {
-      "file": "src/renderer/filetransfer-content.html",
-      "lines": 210
+      "file": "src/main/services/filetransfer.js",
+      "lines": 195
     },
     {
       "file": "src/renderer/info.html",
       "lines": 192
-    },
-    {
-      "file": "src/main/services/filetransfer.js",
-      "lines": 135
     }
   ],
   "sourceFileBreakdown": [
@@ -87,11 +87,11 @@
     },
     {
       "file": "src/main/ipc.js",
-      "lines": 18
+      "lines": 25
     },
     {
       "file": "src/main/services/filetransfer.js",
-      "lines": 135
+      "lines": 195
     },
     {
       "file": "src/main/windows/main-window.js",
@@ -99,15 +99,15 @@
     },
     {
       "file": "src/preload/index.js",
-      "lines": 40
+      "lines": 44
     },
     {
       "file": "src/renderer/filetransfer-content.css",
-      "lines": 450
+      "lines": 576
     },
     {
       "file": "src/renderer/filetransfer-content.html",
-      "lines": 210
+      "lines": 222
     },
     {
       "file": "src/renderer/filetransfer.html",
@@ -131,11 +131,11 @@
     },
     {
       "file": "src/renderer/shell.js",
-      "lines": 645
+      "lines": 785
     },
     {
       "file": "src/shared/ipc.js",
-      "lines": 10
+      "lines": 11
     },
     {
       "file": "tools/code-metrics.js",

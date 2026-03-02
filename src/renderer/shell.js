@@ -25,6 +25,7 @@ const summaryTotalBytes = document.getElementById("summary-total-bytes");
 const summaryTotalDuration = document.getElementById("summary-total-duration");
 const summaryAverageRate = document.getElementById("summary-average-rate");
 const summaryExtra = document.getElementById("summary-extra");
+const receivedBrowser = document.getElementById("received-browser");
 const TRANSFER_EVENT_PREFIX = "@@EVENT@@ ";
 const filetransferApi =
   window.appApi && window.appApi.filetransfer ? window.appApi.filetransfer : null;
@@ -94,6 +95,8 @@ let transferRuntime = {
   completedFiles: 0,
   retries: 0,
 };
+let receivedTransferFolders = [];
+let expandedReceivedFolder = "";
 const TRANSFER_FAILURE_NOTE =
   "Please verify that you are connected to a nearby device via Wi-Fi, then restart the transfer.";
 
@@ -269,6 +272,140 @@ function setTransferDetailsExpanded(expanded) {
 
   transferGrid.classList.toggle("is-details-collapsed", !expanded);
   transferDetailsToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+}
+
+function renderReceivedBrowserMessage(className, text) {
+  if (!receivedBrowser) {
+    return;
+  }
+
+  receivedBrowser.replaceChildren();
+
+  const message = document.createElement("p");
+  message.className = className;
+  message.textContent = text;
+  receivedBrowser.append(message);
+}
+
+function renderReceivedTransferBrowser() {
+  if (!receivedBrowser) {
+    return;
+  }
+
+  receivedBrowser.replaceChildren();
+
+  if (!receivedTransferFolders.length) {
+    renderReceivedBrowserMessage(
+      "received-empty",
+      "No received files yet. Completed transfers will appear here by date.",
+    );
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "received-folder-grid";
+
+  receivedTransferFolders.forEach((folder) => {
+    const card = document.createElement("article");
+    card.className = "received-folder-card";
+
+    const trigger = document.createElement("button");
+    trigger.className = "received-folder-button";
+    trigger.type = "button";
+    trigger.setAttribute(
+      "aria-expanded",
+      expandedReceivedFolder === folder.folderName ? "true" : "false",
+    );
+
+    const icon = document.createElement("span");
+    icon.className = "received-folder-icon";
+    icon.textContent = String(folder.fileCount);
+
+    const meta = document.createElement("div");
+    meta.className = "received-folder-meta";
+
+    const date = document.createElement("strong");
+    date.className = "received-folder-date";
+    date.textContent = folder.dateLabel;
+
+    const type = document.createElement("span");
+    type.className = "received-folder-type";
+    type.textContent = `${folder.protocolHint} Folder`;
+
+    const size = document.createElement("span");
+    size.className = "received-folder-size";
+    size.textContent = `${folder.fileCount} files • ${formatBytes(folder.totalBytes)}`;
+
+    meta.append(date, type, size);
+    trigger.append(icon, meta);
+    trigger.addEventListener("click", () => {
+      expandedReceivedFolder =
+        expandedReceivedFolder === folder.folderName ? "" : folder.folderName;
+      renderReceivedTransferBrowser();
+    });
+    card.append(trigger);
+
+    if (expandedReceivedFolder === folder.folderName) {
+      const fileList = document.createElement("div");
+      fileList.className = "received-file-list";
+
+      folder.files.forEach((file) => {
+        const row = document.createElement("div");
+        row.className = "received-file-row";
+
+        const name = document.createElement("span");
+        name.className = "received-file-name";
+        name.textContent = file.name;
+
+        const sizeLabel = document.createElement("span");
+        sizeLabel.className = "received-file-size";
+        sizeLabel.textContent = formatBytes(file.size);
+
+        row.append(name, sizeLabel);
+        fileList.append(row);
+      });
+
+      card.append(fileList);
+    }
+
+    grid.append(card);
+  });
+
+  receivedBrowser.append(grid);
+}
+
+async function refreshReceivedTransferBrowser() {
+  if (!receivedBrowser) {
+    return;
+  }
+
+  if (!filetransferApi || typeof filetransferApi.listReceived !== "function") {
+    renderReceivedBrowserMessage(
+      "received-error",
+      "Received-file browser is unavailable until the app is restarted.",
+    );
+    return;
+  }
+
+  try {
+    const result = await filetransferApi.listReceived();
+    receivedTransferFolders = result && result.ok ? result.folders : [];
+
+    if (
+      expandedReceivedFolder &&
+      !receivedTransferFolders.some((folder) => folder.folderName === expandedReceivedFolder)
+    ) {
+      expandedReceivedFolder = "";
+    }
+
+    renderReceivedTransferBrowser();
+  } catch (error) {
+    console.error(error);
+    renderReceivedBrowserMessage(
+      "received-error",
+      "Unable to load received files right now.",
+    );
+  }
 }
 
 function renderTransferLog() {
@@ -597,6 +734,7 @@ function bindTransferLauncher() {
         transferActionStatus.textContent = mode.failText;
         setTransferHelpNote(TRANSFER_FAILURE_NOTE);
         setTransferLogCollapsed(false);
+        void refreshReceivedTransferBrowser();
         transferButton.disabled = false;
         udpTransferButton.disabled = false;
         return;
@@ -612,6 +750,7 @@ function bindTransferLauncher() {
         transferActionStatus.textContent = payload.ok ? mode.successText : mode.failText;
         setTransferHelpNote(payload.ok ? "" : TRANSFER_FAILURE_NOTE);
         setTransferLogCollapsed(payload.ok);
+        void refreshReceivedTransferBrowser();
         transferButton.disabled = false;
         udpTransferButton.disabled = false;
       }
@@ -623,6 +762,7 @@ function bindTransferLauncher() {
 
   renderTransferMode(currentTransferMode);
   setTransferDetailsExpanded(false);
+  void refreshReceivedTransferBrowser();
 
   transferButton.addEventListener("click", async () => {
     await startTransfer("tcp");

@@ -1,9 +1,11 @@
+const fs = require("node:fs");
 const { spawn } = require("node:child_process");
 const path = require("node:path");
 const TCP_SCRIPT_PATH = path.join(__dirname, "..", "..", "..", "PlusWifi_Client.py");
 const UDP_SCRIPT_PATH = path.join(__dirname, "..", "..", "..", "udp_file_client.py");
 const EXECUTION_TIMEOUT_MS = 10 * 60 * 1000;
 const { IPC_CHANNELS } = require("../../shared/ipc");
+const RECEIVE_DIR_PATTERN = /^(RE|Re)(\d{8})$/;
 
 let activeTransfer = null;
 
@@ -27,6 +29,63 @@ function sendTransferEvent(webContents, payload) {
   }
 
   webContents.send(IPC_CHANNELS.transferEvent, payload);
+}
+
+function formatTransferDate(dateText) {
+  return `${dateText.slice(0, 4)}-${dateText.slice(4, 6)}-${dateText.slice(6, 8)}`;
+}
+
+function listReceivedTransfers() {
+  const rootDirectory = path.dirname(TCP_SCRIPT_PATH);
+  const folders = [];
+  const entries = fs.existsSync(rootDirectory)
+    ? fs.readdirSync(rootDirectory, { withFileTypes: true })
+    : [];
+
+  entries.forEach((entry) => {
+    if (!entry.isDirectory()) {
+      return;
+    }
+
+    const match = entry.name.match(RECEIVE_DIR_PATTERN);
+    if (!match) {
+      return;
+    }
+
+    const folderPath = path.join(rootDirectory, entry.name);
+    const files = fs
+      .readdirSync(folderPath, { withFileTypes: true })
+      .filter((item) => item.isFile())
+      .map((item) => {
+        const absolutePath = path.join(folderPath, item.name);
+        const { size } = fs.statSync(absolutePath);
+
+        return {
+          name: item.name,
+          size,
+        };
+      })
+      .sort((left, right) => left.name.localeCompare(right.name));
+
+    const dateCode = match[2];
+
+    folders.push({
+      folderName: entry.name,
+      dateCode,
+      dateLabel: formatTransferDate(dateCode),
+      protocolHint: match[1] === "RE" ? "TCP" : "UDP",
+      fileCount: files.length,
+      totalBytes: files.reduce((sum, file) => sum + file.size, 0),
+      files,
+    });
+  });
+
+  folders.sort((left, right) => right.dateCode.localeCompare(left.dateCode));
+
+  return {
+    ok: true,
+    folders,
+  };
 }
 
 function launchTransferProcess(webContents, mode, scriptPath, dateText) {
@@ -130,6 +189,7 @@ async function runUdpTransfer(webContents, dateText) {
 }
 
 module.exports = {
+  listReceivedTransfers,
   runPythonTransfer,
   runUdpTransfer,
 };

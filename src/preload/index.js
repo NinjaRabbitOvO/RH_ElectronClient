@@ -5,6 +5,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 const IPC_CHANNELS = {
   startFileTransfer: "app:start-file-transfer",
   startUdpTransfer: "app:start-udp-transfer",
+  listReceivedTransfers: "app:list-received-transfers",
   transferEvent: "app:transfer-event",
   ping: "app:ping",
 };
@@ -27,6 +28,9 @@ contextBridge.exposeInMainWorld("appApi", {
     },
     startUdp(dateText) {
       return ipcRenderer.invoke(IPC_CHANNELS.startUdpTransfer, dateText);
+    },
+    listReceived() {
+      return ipcRenderer.invoke(IPC_CHANNELS.listReceivedTransfers);
     },
   },
   versions: {
