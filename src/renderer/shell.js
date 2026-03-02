@@ -4,6 +4,7 @@ const transferDateInput = document.getElementById("transfer-date");
 const transferButton = document.getElementById("start-transfer");
 const udpTransferButton = document.getElementById("start-udp-transfer");
 const transferActionStatus = document.getElementById("transfer-action-status");
+const transferHelpNote = document.getElementById("transfer-help-note");
 const transferLog = document.getElementById("transfer-log");
 const protocolEndpoint = document.getElementById("protocol-endpoint");
 const protocolStatus = document.getElementById("protocol-status");
@@ -49,7 +50,7 @@ const TRANSFER_MODES = {
     ],
     pendingText: "Choose a date, then launch the Python TCP receiver.",
     runningText: "Running Python TCP receiver...",
-    successText: "TCP transfer completed. Review the log output below.",
+    successText: "TCP transfer completed successfully.",
     failText: "TCP transfer failed. Review the error output below.",
     launchLabel: "Launching TCP transfer job...",
   },
@@ -76,7 +77,7 @@ const TRANSFER_MODES = {
     ],
     pendingText: "Choose a date, then launch the Python UDP receiver.",
     runningText: "Running Python UDP receiver...",
-    successText: "UDP transfer completed. Review the log output below.",
+    successText: "UDP transfer completed successfully.",
     failText: "UDP transfer failed. Review the error output below.",
     launchLabel: "Launching UDP transfer job...",
   },
@@ -91,6 +92,8 @@ let transferRuntime = {
   completedFiles: 0,
   retries: 0,
 };
+const TRANSFER_FAILURE_NOTE =
+  "Please verify that you are connected to a nearby device via Wi-Fi, then restart the transfer.";
 
 function renderActiveNavigation() {
   const currentPage = document.body.dataset.currentPage;
@@ -187,6 +190,8 @@ function renderTransferMode(modeKey) {
   renderMetricValue("metric-block", mode.metrics.block);
   renderMetricValue("metric-finish", mode.metrics.finish);
   renderProtocolCommands(mode.commands);
+  setTransferHelpNote("");
+  setTransferLogCollapsed(true);
 
   if (transferActionStatus) {
     transferActionStatus.textContent = mode.pendingText;
@@ -235,6 +240,24 @@ function formatDuration(seconds) {
 
 function appendTransferLog(text) {
   applyTransferConsoleText(text);
+}
+
+function setTransferLogCollapsed(collapsed) {
+  if (!transferLog) {
+    return;
+  }
+
+  transferLog.classList.toggle("is-collapsed", collapsed);
+}
+
+function setTransferHelpNote(text) {
+  if (!transferHelpNote) {
+    return;
+  }
+
+  const content = text || "";
+  transferHelpNote.textContent = content;
+  transferHelpNote.classList.toggle("is-visible", Boolean(content));
 }
 
 function renderTransferLog() {
@@ -303,6 +326,8 @@ function resetTransferDashboard(modeKey) {
   updateText(summaryAverageRate, "0 B/s");
   updateText(summaryExtra, "0 / 0");
   updateProgress(0);
+  setTransferHelpNote("");
+  setTransferLogCollapsed(true);
 }
 
 function applyTransferConsoleText(text) {
@@ -478,6 +503,8 @@ async function startTransfer(modeKey) {
 
   if (!filetransferApi) {
     transferActionStatus.textContent = "Transfer API is unavailable. Restart the app to reload preload scripts.";
+    setTransferHelpNote("");
+    setTransferLogCollapsed(false);
     transferLog.textContent = "Renderer could not access window.appApi.filetransfer.";
     return;
   }
@@ -487,6 +514,8 @@ async function startTransfer(modeKey) {
   transferButton.disabled = true;
   udpTransferButton.disabled = true;
   transferActionStatus.textContent = mode.runningText;
+  setTransferHelpNote("");
+  setTransferLogCollapsed(true);
   transferStreamBuffer = "";
   transferLogLines = [];
   transferLiveLine = "";
@@ -499,13 +528,20 @@ async function startTransfer(modeKey) {
         : await filetransferApi.start(selectedDate);
 
     if (!result.ok) {
-      transferActionStatus.textContent = result.error || mode.failText;
-      appendTransferLog(`\n${result.error || "Failed to launch transfer."}\n`);
+      const errorText = result.error || mode.failText;
+      const isTransferFailure = !result.error;
+
+      transferActionStatus.textContent = errorText;
+      setTransferHelpNote(isTransferFailure ? TRANSFER_FAILURE_NOTE : "");
+      setTransferLogCollapsed(!isTransferFailure);
+      appendTransferLog(`\n${errorText || "Failed to launch transfer."}\n`);
       transferButton.disabled = false;
       udpTransferButton.disabled = false;
     }
   } catch (error) {
     transferActionStatus.textContent = "Transfer launch failed before the receiver started.";
+    setTransferHelpNote("");
+    setTransferLogCollapsed(false);
     transferStreamBuffer = "";
     transferLogLines = [];
     transferLiveLine = "";
@@ -535,6 +571,8 @@ function bindTransferLauncher() {
         }
         appendTransferLog(`> ${payload.command}\n`);
         transferActionStatus.textContent = mode.runningText;
+        setTransferHelpNote("");
+        setTransferLogCollapsed(true);
         return;
       }
 
@@ -546,6 +584,8 @@ function bindTransferLauncher() {
       if (payload.type === "error") {
         appendTransferLog(`\n${payload.message}\n`);
         transferActionStatus.textContent = mode.failText;
+        setTransferHelpNote(TRANSFER_FAILURE_NOTE);
+        setTransferLogCollapsed(false);
         transferButton.disabled = false;
         udpTransferButton.disabled = false;
         return;
@@ -559,6 +599,8 @@ function bindTransferLauncher() {
           `\nProcess exited with code ${payload.code}${payload.signal ? ` (${payload.signal})` : ""}.\n`,
         );
         transferActionStatus.textContent = payload.ok ? mode.successText : mode.failText;
+        setTransferHelpNote(payload.ok ? "" : TRANSFER_FAILURE_NOTE);
+        setTransferLogCollapsed(payload.ok);
         transferButton.disabled = false;
         udpTransferButton.disabled = false;
       }
