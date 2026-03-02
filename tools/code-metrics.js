@@ -18,6 +18,14 @@ function runGit(args) {
   }).trim();
 }
 
+function tryRunGit(args) {
+  try {
+    return runGit(args);
+  } catch (error) {
+    return null;
+  }
+}
+
 function loadConfig() {
   return JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
 }
@@ -32,15 +40,7 @@ function getTrackedSourceFiles() {
     .filter((entry) => SOURCE_PATTERN.test(entry));
 }
 
-function countLines(filePath) {
-  const absolutePath = path.join(ROOT_DIR, filePath);
-
-  if (!fs.existsSync(absolutePath)) {
-    return 0;
-  }
-
-  const content = fs.readFileSync(absolutePath, "utf8");
-
+function countLinesFromText(content) {
   if (!content) {
     return 0;
   }
@@ -48,9 +48,27 @@ function countLines(filePath) {
   return content.split(/\r?\n/).length;
 }
 
-function parseDiffStats(rangeSpec) {
-  const output = runGit(["diff", "--numstat", rangeSpec]);
+function countWorkingTreeLines(filePath) {
+  const absolutePath = path.join(ROOT_DIR, filePath);
 
+  if (!fs.existsSync(absolutePath)) {
+    return 0;
+  }
+
+  return countLinesFromText(fs.readFileSync(absolutePath, "utf8"));
+}
+
+function countIndexLines(filePath) {
+  const content = tryRunGit(["show", `:${filePath}`]);
+
+  if (content === null) {
+    return 0;
+  }
+
+  return countLinesFromText(content);
+}
+
+function parseDiffStatsFromOutput(output) {
   if (!output) {
     return {
       changedFiles: 0,
@@ -99,6 +117,111 @@ function parseDiffStats(rangeSpec) {
   };
 }
 
+function parseDiffStats(rangeSpec) {
+  return parseDiffStatsFromOutput(runGit(["diff", "--numstat", rangeSpec]));
+}
+
+function parseStagedDiffStats() {
+  return parseDiffStatsFromOutput(runGit(["diff", "--cached", "--numstat"]));
+}
+
+function addDiffStats(left, right) {
+  return {
+    changedFiles: left.changedFiles + right.changedFiles,
+    writtenLines: left.writtenLines + right.writtenLines,
+    deletedLines: left.deletedLines + right.deletedLines,
+    changeLines: left.changeLines + right.changeLines,
+  };
+}
+
+function classifyCommitMessage(message) {
+  const normalized = String(message || "").trim().toLowerCase();
+  const result = {
+    totalCommitCount: normalized ? 1 : 0,
+    featureCommitCount: 0,
+    adjustmentCommitCount: 0,
+  };
+
+  if (!normalized) {
+    return result;
+  }
+
+  if (normalized.startsWith("feat:") || normalized.startsWith("feat(")) {
+    result.featureCommitCount = 1;
+    return result;
+  }
+
+  if (
+    ADJUSTMENT_PREFIXES.some(
+      (prefix) =>
+        normalized.startsWith(`${prefix}:`) || normalized.startsWith(`${prefix}(`),
+    )
+  ) {
+    result.adjustmentCommitCount = 1;
+  }
+
+  return result;
+}
+
+function addCommitCounts(left, right) {
+  return {
+    totalCommitCount: left.totalCommitCount + right.totalCommitCount,
+    featureCommitCount: left.featureCommitCount + right.featureCommitCount,
+    adjustmentCommitCount: left.adjustmentCommitCount + right.adjustmentCommitCount,
+  };
+}
+
+function readCommitMessageSummary(messageFilePath) {
+  if (!messageFilePath) {
+    return "";
+  }
+
+  const absolutePath = path.isAbsolute(messageFilePath)
+    ? messageFilePath
+    : path.join(ROOT_DIR, messageFilePath);
+
+  if (!fs.existsSync(absolutePath)) {
+    return "";
+  }
+
+  const content = fs.readFileSync(absolutePath, "utf8");
+  const firstLine = content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  return firstLine || "";
+}
+
+function parseArgs(argv) {
+  const options = {
+    record: false,
+    includeStaged: false,
+    commitMsgFile: "",
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+
+    if (token === "--record") {
+      options.record = true;
+      continue;
+    }
+
+    if (token === "--include-staged") {
+      options.includeStaged = true;
+      continue;
+    }
+
+    if (token === "--commit-msg-file") {
+      options.commitMsgFile = argv[index + 1] || "";
+      index += 1;
+    }
+  }
+
+  return options;
+}
+
 function parseCommitCounts(rangeSpec) {
   const output = runGit(["log", "--format=%s", rangeSpec]);
   const messages = output ? output.split(/\r?\n/).filter(Boolean) : [];
@@ -143,11 +266,32 @@ function buildRangeMetrics(baseCommit) {
   };
 }
 
-function buildSourceBreakdown() {
+function buildRangeMetricsWithOptions(baseCommit, options) {
+  const baseMetrics = buildRangeMetrics(baseCommit);
+
+  if (!options.includeStaged) {
+    return baseMetrics;
+  }
+
+  const stagedDiff = parseStagedDiffStats();
+  const pendingCommit = classifyCommitMessage(
+    readCommitMessageSummary(options.commitMsgFile),
+  );
+
+  return {
+    baselineCommit: baseMetrics.baselineCommit,
+    ...addDiffStats(baseMetrics, stagedDiff),
+    ...addCommitCounts(baseMetrics, pendingCommit),
+  };
+}
+
+function buildSourceBreakdown(options) {
   const files = getTrackedSourceFiles();
   const breakdown = files.map((filePath) => ({
     file: filePath,
-    lines: countLines(filePath),
+    lines: options.includeStaged
+      ? countIndexLines(filePath)
+      : countWorkingTreeLines(filePath),
   }));
 
   const bySize = breakdown
@@ -164,10 +308,10 @@ function buildSourceBreakdown() {
   };
 }
 
-function buildSnapshot() {
+function buildSnapshot(options) {
   const config = loadConfig();
   const headCommit = runGit(["rev-parse", "HEAD"]);
-  const source = buildSourceBreakdown();
+  const source = buildSourceBreakdown(options);
 
   return {
     timestamp: new Date().toISOString(),
@@ -177,8 +321,8 @@ function buildSnapshot() {
       trackingStartCommit: config.trackingStartCommit,
       trackingEnabledAt: config.trackingEnabledAt,
     },
-    projectTotals: buildRangeMetrics(config.projectBaselineCommit),
-    trackingTotals: buildRangeMetrics(config.trackingStartCommit),
+    projectTotals: buildRangeMetricsWithOptions(config.projectBaselineCommit, options),
+    trackingTotals: buildRangeMetricsWithOptions(config.trackingStartCommit, options),
     currentTotals: {
       totalLines: source.totalLines,
       sourceFileCount: source.fileCount,
@@ -217,12 +361,12 @@ function printSummary(snapshot) {
 }
 
 function main() {
-  const shouldRecord = process.argv.includes("--record");
-  const snapshot = buildSnapshot();
+  const options = parseArgs(process.argv.slice(2));
+  const snapshot = buildSnapshot(options);
 
   printSummary(snapshot);
 
-  if (shouldRecord) {
+  if (options.record) {
     writeSnapshot(snapshot);
     console.log(`Recorded metrics to ${path.relative(ROOT_DIR, LATEST_PATH)}`);
   }

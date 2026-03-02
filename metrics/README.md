@@ -22,8 +22,14 @@ Commands:
 
 - `npm run metrics`: calculate and print the current snapshot
 - `npm run metrics:record`: calculate, print, and write `metrics/latest.json` plus append one line to `metrics/history.jsonl`
+- `npm run hooks:enable`: point local Git hooks to the tracked `.githooks` directory
 
 Output files:
 
 - `metrics/latest.json`: latest full snapshot
 - `metrics/history.jsonl`: append-only snapshot history
+
+Commit hook:
+
+- `.githooks/commit-msg` records metrics automatically before each commit
+- run `npm run hooks:enable` once in each clone to activate the tracked hook path

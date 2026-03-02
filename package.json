@@ -11,6 +11,7 @@
     "test": "node --check src/main/index.js && node --check src/main/ipc.js && node --check src/main/windows/main-window.js && node --check src/main/services/filetransfer.js && node --check src/preload/index.js && node --check src/renderer/shell.js && node --check src/shared/ipc.js",
     "metrics": "node tools/code-metrics.js",
     "metrics:record": "node tools/code-metrics.js --record",
+    "hooks:enable": "git config core.hooksPath .githooks",
     "package": "electron-forge package",
     "make": "electron-forge make"
   },

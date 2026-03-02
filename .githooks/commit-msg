@@ -1,0 +1,10 @@
+#!/bin/sh
+
+npm run metrics:record -- --include-staged --commit-msg-file "$1"
+
+if [ $? -ne 0 ]; then
+  echo "metrics recording failed; aborting commit."
+  exit 1
+fi
+
+git add metrics/latest.json metrics/history.jsonl
