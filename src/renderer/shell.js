@@ -26,6 +26,12 @@ const summaryTotalDuration = document.getElementById("summary-total-duration");
 const summaryAverageRate = document.getElementById("summary-average-rate");
 const summaryExtra = document.getElementById("summary-extra");
 const receivedBrowser = document.getElementById("received-browser");
+const receivedFolderModal = document.getElementById("received-folder-modal");
+const receivedFolderBackdrop = document.getElementById("received-folder-backdrop");
+const receivedFolderClose = document.getElementById("received-folder-close");
+const receivedFolderTitle = document.getElementById("received-folder-title");
+const receivedFolderSummary = document.getElementById("received-folder-summary");
+const receivedFolderList = document.getElementById("received-folder-list");
 const TRANSFER_EVENT_PREFIX = "@@EVENT@@ ";
 const filetransferApi =
   window.appApi && window.appApi.filetransfer ? window.appApi.filetransfer : null;
@@ -96,7 +102,7 @@ let transferRuntime = {
   retries: 0,
 };
 let receivedTransferFolders = [];
-let expandedReceivedFolder = "";
+let activeReceivedFolder = "";
 const TRANSFER_FAILURE_NOTE =
   "Please verify that you are connected to a nearby device via Wi-Fi, then restart the transfer.";
 
@@ -312,10 +318,7 @@ function renderReceivedTransferBrowser() {
     const trigger = document.createElement("button");
     trigger.className = "received-folder-button";
     trigger.type = "button";
-    trigger.setAttribute(
-      "aria-expanded",
-      expandedReceivedFolder === folder.folderName ? "true" : "false",
-    );
+    trigger.setAttribute("aria-label", `Open received files for ${folder.dateLabel}`);
 
     const icon = document.createElement("span");
     icon.className = "received-folder-icon";
@@ -334,44 +337,89 @@ function renderReceivedTransferBrowser() {
 
     const size = document.createElement("span");
     size.className = "received-folder-size";
-    size.textContent = `${folder.fileCount} files • ${formatBytes(folder.totalBytes)}`;
+    size.textContent = `${folder.fileCount} files | ${formatBytes(folder.totalBytes)}`;
 
     meta.append(date, type, size);
     trigger.append(icon, meta);
     trigger.addEventListener("click", () => {
-      expandedReceivedFolder =
-        expandedReceivedFolder === folder.folderName ? "" : folder.folderName;
-      renderReceivedTransferBrowser();
+      openReceivedFolderModal(folder.folderName);
     });
     card.append(trigger);
-
-    if (expandedReceivedFolder === folder.folderName) {
-      const fileList = document.createElement("div");
-      fileList.className = "received-file-list";
-
-      folder.files.forEach((file) => {
-        const row = document.createElement("div");
-        row.className = "received-file-row";
-
-        const name = document.createElement("span");
-        name.className = "received-file-name";
-        name.textContent = file.name;
-
-        const sizeLabel = document.createElement("span");
-        sizeLabel.className = "received-file-size";
-        sizeLabel.textContent = formatBytes(file.size);
-
-        row.append(name, sizeLabel);
-        fileList.append(row);
-      });
-
-      card.append(fileList);
-    }
 
     grid.append(card);
   });
 
   receivedBrowser.append(grid);
+}
+
+function findReceivedFolder(folderName) {
+  return receivedTransferFolders.find((folder) => folder.folderName === folderName) || null;
+}
+
+function renderReceivedFolderModal() {
+  if (
+    !receivedFolderModal ||
+    !receivedFolderTitle ||
+    !receivedFolderSummary ||
+    !receivedFolderList
+  ) {
+    return;
+  }
+
+  const folder = activeReceivedFolder ? findReceivedFolder(activeReceivedFolder) : null;
+
+  if (!folder) {
+    receivedFolderModal.hidden = true;
+    receivedFolderModal.classList.remove("is-open");
+    receivedFolderModal.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  receivedFolderTitle.textContent = folder.dateLabel;
+  receivedFolderSummary.textContent =
+    `${folder.protocolHint} folder | ${folder.fileCount} files | ${formatBytes(folder.totalBytes)}`;
+  receivedFolderList.replaceChildren();
+
+  if (!folder.files.length) {
+    const empty = document.createElement("p");
+    empty.className = "received-modal-empty";
+    empty.textContent = "This folder is empty right now.";
+    receivedFolderList.append(empty);
+  } else {
+    folder.files.forEach((file) => {
+      const row = document.createElement("div");
+      row.className = "received-file-row";
+
+      const name = document.createElement("span");
+      name.className = "received-file-name";
+      name.textContent = file.name;
+
+      const sizeLabel = document.createElement("span");
+      sizeLabel.className = "received-file-size";
+      sizeLabel.textContent = formatBytes(file.size);
+
+      row.append(name, sizeLabel);
+      receivedFolderList.append(row);
+    });
+  }
+
+  receivedFolderModal.hidden = false;
+  receivedFolderModal.classList.add("is-open");
+  receivedFolderModal.setAttribute("aria-hidden", "false");
+}
+
+function closeReceivedFolderModal() {
+  if (!activeReceivedFolder) {
+    return;
+  }
+
+  activeReceivedFolder = "";
+  renderReceivedFolderModal();
+}
+
+function openReceivedFolderModal(folderName) {
+  activeReceivedFolder = folderName;
+  renderReceivedFolderModal();
 }
 
 async function refreshReceivedTransferBrowser() {
@@ -391,16 +439,15 @@ async function refreshReceivedTransferBrowser() {
     const result = await filetransferApi.listReceived();
     receivedTransferFolders = result && result.ok ? result.folders : [];
 
-    if (
-      expandedReceivedFolder &&
-      !receivedTransferFolders.some((folder) => folder.folderName === expandedReceivedFolder)
-    ) {
-      expandedReceivedFolder = "";
+    if (activeReceivedFolder && !findReceivedFolder(activeReceivedFolder)) {
+      activeReceivedFolder = "";
     }
 
     renderReceivedTransferBrowser();
+    renderReceivedFolderModal();
   } catch (error) {
     console.error(error);
+    closeReceivedFolderModal();
     renderReceivedBrowserMessage(
       "received-error",
       "Unable to load received files right now.",
@@ -776,6 +823,26 @@ function bindTransferLauncher() {
     transferDetailsToggle.addEventListener("click", () => {
       const isExpanded = transferDetailsToggle.getAttribute("aria-expanded") === "true";
       setTransferDetailsExpanded(!isExpanded);
+    });
+  }
+
+  if (receivedFolderBackdrop) {
+    receivedFolderBackdrop.addEventListener("click", () => {
+      closeReceivedFolderModal();
+    });
+  }
+
+  if (receivedFolderClose) {
+    receivedFolderClose.addEventListener("click", () => {
+      closeReceivedFolderModal();
+    });
+  }
+
+  if (receivedFolderModal) {
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !receivedFolderModal.hidden) {
+        closeReceivedFolderModal();
+      }
     });
   }
 }

@@ -194,6 +194,42 @@
           </p>
           <div id="received-browser" class="received-browser"></div>
         </section>
+
+        <div
+          id="received-folder-modal"
+          class="received-modal"
+          hidden
+          aria-hidden="true"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="received-folder-title"
+        >
+          <button
+            id="received-folder-backdrop"
+            class="received-modal-backdrop"
+            type="button"
+            tabindex="-1"
+            aria-label="Close received folder viewer"
+          ></button>
+          <section class="received-modal-panel">
+            <div class="received-modal-head">
+              <div class="card-head">
+                <p class="eyebrow">Received Folder</p>
+                <h3 id="received-folder-title">Folder Contents</h3>
+              </div>
+              <button
+                id="received-folder-close"
+                class="received-modal-close"
+                type="button"
+                aria-label="Close received folder viewer"
+              >
+                Close
+              </button>
+            </div>
+            <p id="received-folder-summary" class="received-modal-summary"></p>
+            <div id="received-folder-list" class="received-modal-list"></div>
+          </section>
+        </div>
       </section>
     </main>
 
