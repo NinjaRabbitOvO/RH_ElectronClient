@@ -1,0 +1,145 @@
+{
+  "timestamp": "2026-03-02T15:45:53.556Z",
+  "headCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
+  "baselines": {
+    "projectBaselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
+    "trackingStartCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
+    "trackingEnabledAt": "2026-03-02T00:00:00.000Z"
+  },
+  "projectTotals": {
+    "baselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
+    "changedFiles": 21,
+    "writtenLines": 3023,
+    "deletedLines": 71,
+    "changeLines": 3094,
+    "totalCommitCount": 19,
+    "featureCommitCount": 10,
+    "adjustmentCommitCount": 7
+  },
+  "trackingTotals": {
+    "baselineCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
+    "changedFiles": 0,
+    "writtenLines": 0,
+    "deletedLines": 0,
+    "changeLines": 0,
+    "totalCommitCount": 0,
+    "featureCommitCount": 0,
+    "adjustmentCommitCount": 0
+  },
+  "currentTotals": {
+    "totalLines": 3084,
+    "sourceFileCount": 17
+  },
+  "majorSourceFiles": [
+    {
+      "file": "src/renderer/shell.js",
+      "lines": 627
+    },
+    {
+      "file": "udp_file_client.py",
+      "lines": 498
+    },
+    {
+      "file": "src/renderer/filetransfer-content.css",
+      "lines": 403
+    },
+    {
+      "file": "src/renderer/shell.css",
+      "lines": 247
+    },
+    {
+      "file": "src/renderer/info.css",
+      "lines": 243
+    },
+    {
+      "file": "PlusWifi_Client.py",
+      "lines": 215
+    },
+    {
+      "file": "src/renderer/filetransfer-content.html",
+      "lines": 202
+    },
+    {
+      "file": "src/renderer/info.html",
+      "lines": 193
+    },
+    {
+      "file": "src/main/services/filetransfer.js",
+      "lines": 136
+    },
+    {
+      "file": "src/renderer/shell.html",
+      "lines": 76
+    }
+  ],
+  "sourceFileBreakdown": [
+    {
+      "file": "PlusWifi_Client.py",
+      "lines": 215
+    },
+    {
+      "file": "forge.config.js",
+      "lines": 46
+    },
+    {
+      "file": "src/main/index.js",
+      "lines": 28
+    },
+    {
+      "file": "src/main/ipc.js",
+      "lines": 19
+    },
+    {
+      "file": "src/main/services/filetransfer.js",
+      "lines": 136
+    },
+    {
+      "file": "src/main/windows/main-window.js",
+      "lines": 43
+    },
+    {
+      "file": "src/preload/index.js",
+      "lines": 41
+    },
+    {
+      "file": "src/renderer/filetransfer-content.css",
+      "lines": 403
+    },
+    {
+      "file": "src/renderer/filetransfer-content.html",
+      "lines": 202
+    },
+    {
+      "file": "src/renderer/filetransfer.html",
+      "lines": 56
+    },
+    {
+      "file": "src/renderer/info.css",
+      "lines": 243
+    },
+    {
+      "file": "src/renderer/info.html",
+      "lines": 193
+    },
+    {
+      "file": "src/renderer/shell.css",
+      "lines": 247
+    },
+    {
+      "file": "src/renderer/shell.html",
+      "lines": 76
+    },
+    {
+      "file": "src/renderer/shell.js",
+      "lines": 627
+    },
+    {
+      "file": "src/shared/ipc.js",
+      "lines": 11
+    },
+    {
+      "file": "udp_file_client.py",
+      "lines": 498
+    }
+  ]
+}

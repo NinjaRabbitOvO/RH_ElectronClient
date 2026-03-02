@@ -1,0 +1,11 @@
+{
+  "projectBaselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
+  "trackingStartCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
+  "trackingEnabledAt": "2026-03-02T00:00:00.000Z",
+  "sourceExtensions": [
+    ".js",
+    ".html",
+    ".css",
+    ".py"
+  ]
+}
