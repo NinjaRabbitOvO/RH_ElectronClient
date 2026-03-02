@@ -1,6 +1,6 @@
 #!/bin/sh
 
-npm run metrics:record -- --include-staged --commit-msg-file "$1"
+npm run metrics:record -- --include-staged
 
 if [ $? -ne 0 ]; then
   echo "metrics recording failed; aborting commit."

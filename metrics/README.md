@@ -31,5 +31,5 @@ Output files:
 
 Commit hook:
 
-- `.githooks/commit-msg` records metrics automatically before each commit
+- `.githooks/pre-commit` records metrics automatically before each commit
 - run `npm run hooks:enable` once in each clone to activate the tracked hook path

@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-02T15:45:53.556Z",
-  "headCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
+  "timestamp": "2026-03-02T15:54:00.970Z",
+  "headCommit": "c63d5008ee414f02d07f72ed677d055db4a53fa3",
   "baselines": {
     "projectBaselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
     "trackingStartCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
@@ -8,138 +8,142 @@
   },
   "projectTotals": {
     "baselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
-    "changedFiles": 21,
-    "writtenLines": 3023,
+    "changedFiles": 22,
+    "writtenLines": 3398,
     "deletedLines": 71,
-    "changeLines": 3094,
-    "totalCommitCount": 19,
+    "changeLines": 3469,
+    "totalCommitCount": 21,
     "featureCommitCount": 10,
     "adjustmentCommitCount": 7
   },
   "trackingTotals": {
     "baselineCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
-    "changedFiles": 0,
-    "writtenLines": 0,
+    "changedFiles": 1,
+    "writtenLines": 375,
     "deletedLines": 0,
-    "changeLines": 0,
-    "totalCommitCount": 0,
+    "changeLines": 375,
+    "totalCommitCount": 2,
     "featureCommitCount": 0,
     "adjustmentCommitCount": 0
   },
   "currentTotals": {
-    "totalLines": 3084,
-    "sourceFileCount": 17
+    "totalLines": 3442,
+    "sourceFileCount": 18
   },
   "majorSourceFiles": [
     {
       "file": "src/renderer/shell.js",
-      "lines": 627
+      "lines": 626
     },
     {
       "file": "udp_file_client.py",
-      "lines": 498
+      "lines": 497
     },
     {
       "file": "src/renderer/filetransfer-content.css",
-      "lines": 403
+      "lines": 402
+    },
+    {
+      "file": "tools/code-metrics.js",
+      "lines": 375
     },
     {
       "file": "src/renderer/shell.css",
-      "lines": 247
+      "lines": 246
     },
     {
       "file": "src/renderer/info.css",
-      "lines": 243
+      "lines": 242
     },
     {
       "file": "PlusWifi_Client.py",
-      "lines": 215
+      "lines": 214
     },
     {
       "file": "src/renderer/filetransfer-content.html",
-      "lines": 202
+      "lines": 201
     },
     {
       "file": "src/renderer/info.html",
-      "lines": 193
+      "lines": 192
     },
     {
       "file": "src/main/services/filetransfer.js",
-      "lines": 136
-    },
-    {
-      "file": "src/renderer/shell.html",
-      "lines": 76
+      "lines": 135
     }
   ],
   "sourceFileBreakdown": [
     {
       "file": "PlusWifi_Client.py",
-      "lines": 215
+      "lines": 214
     },
     {
       "file": "forge.config.js",
-      "lines": 46
+      "lines": 45
     },
     {
       "file": "src/main/index.js",
-      "lines": 28
+      "lines": 27
     },
     {
       "file": "src/main/ipc.js",
-      "lines": 19
+      "lines": 18
     },
     {
       "file": "src/main/services/filetransfer.js",
-      "lines": 136
+      "lines": 135
     },
     {
       "file": "src/main/windows/main-window.js",
-      "lines": 43
+      "lines": 42
     },
     {
       "file": "src/preload/index.js",
-      "lines": 41
+      "lines": 40
     },
     {
       "file": "src/renderer/filetransfer-content.css",
-      "lines": 403
+      "lines": 402
     },
     {
       "file": "src/renderer/filetransfer-content.html",
-      "lines": 202
+      "lines": 201
     },
     {
       "file": "src/renderer/filetransfer.html",
-      "lines": 56
+      "lines": 55
     },
     {
       "file": "src/renderer/info.css",
-      "lines": 243
+      "lines": 242
     },
     {
       "file": "src/renderer/info.html",
-      "lines": 193
+      "lines": 192
     },
     {
       "file": "src/renderer/shell.css",
-      "lines": 247
+      "lines": 246
     },
     {
       "file": "src/renderer/shell.html",
-      "lines": 76
+      "lines": 75
     },
     {
       "file": "src/renderer/shell.js",
-      "lines": 627
+      "lines": 626
     },
     {
       "file": "src/shared/ipc.js",
-      "lines": 11
+      "lines": 10
+    },
+    {
+      "file": "tools/code-metrics.js",
+      "lines": 375
     },
     {
       "file": "udp_file_client.py",
-      "lines": 498
+      "lines": 497
     }
   ]
 }
