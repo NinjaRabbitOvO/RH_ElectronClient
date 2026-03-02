@@ -418,11 +418,8 @@ def main():
         print("Invalid date format, expected YYYYMMDD")
         return 1
 
-    out_dir = os.path.join(os.path.dirname(__file__), f"Re{date}")
-    os.makedirs(out_dir, exist_ok=True)
     emit_event("session", mode="udp", endpoint=f"192.168.4.1:{args.port}")
     emit_event("date", date=date)
-    emit_event("folder", path=out_dir)
 
     session_id = random.getrandbits(32)
 
@@ -450,6 +447,10 @@ def main():
         emit_event("files_count", count=0)
         return 0
     emit_event("files_count", count=len(files))
+
+    out_dir = os.path.join(os.path.dirname(__file__), f"Re{date}")
+    os.makedirs(out_dir, exist_ok=True)
+    emit_event("folder", path=out_dir)
 
     total_bytes = 0
     total_elapsed = 0.0
