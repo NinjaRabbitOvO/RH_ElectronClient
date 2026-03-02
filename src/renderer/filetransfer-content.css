@@ -83,8 +83,10 @@
   gap: 18px;
 }
 
-.queue-card {
-  grid-column: 1 / -1;
+.transfer-stack-column {
+  display: grid;
+  gap: 18px;
+  align-content: start;
 }
 
 .launch-row {
@@ -235,9 +237,14 @@
 }
 
 .command-card,
-.receive-card {
+.receive-card,
+.transfer-stack-column {
   display: grid;
   gap: 18px;
+}
+
+.command-card {
+  align-content: start;
 }
 
 .command-list {
