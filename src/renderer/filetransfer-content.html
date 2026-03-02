@@ -61,7 +61,7 @@
           <pre id="transfer-log" class="transfer-log is-collapsed">Waiting for execution...</pre>
         </section>
 
-        <section class="transfer-grid">
+        <section class="transfer-grid is-details-collapsed">
           <section class="surface transfer-card receive-card">
             <div class="card-head">
               <p class="eyebrow">Receive State</p>
@@ -89,10 +89,19 @@
               <div id="transfer-progress-bar" class="progress-bar"></div>
             </div>
             <p id="transfer-progress-text" class="progress-text">0.00%</p>
-            <div class="receive-notes">
-              <span class="note-pill">SocketReader.read_exact()</span>
-              <span class="note-pill">Buffered file writes</span>
-              <span class="note-pill">Per-file rate timing</span>
+            <div class="receive-footer">
+              <div class="receive-notes">
+                <span class="note-pill">SocketReader.read_exact()</span>
+                <span class="note-pill">Buffered file writes</span>
+                <span class="note-pill">Per-file rate timing</span>
+              </div>
+              <button
+                id="transfer-details-toggle"
+                class="details-toggle"
+                type="button"
+                aria-label="Show transfer details"
+                aria-expanded="false"
+              ></button>
             </div>
           </section>
 

@@ -6,6 +6,8 @@ const udpTransferButton = document.getElementById("start-udp-transfer");
 const transferActionStatus = document.getElementById("transfer-action-status");
 const transferHelpNote = document.getElementById("transfer-help-note");
 const transferLog = document.getElementById("transfer-log");
+const transferGrid = document.querySelector(".transfer-grid");
+const transferDetailsToggle = document.getElementById("transfer-details-toggle");
 const protocolEndpoint = document.getElementById("protocol-endpoint");
 const protocolStatus = document.getElementById("protocol-status");
 const protocolTitle = document.getElementById("protocol-title");
@@ -258,6 +260,15 @@ function setTransferHelpNote(text) {
   const content = text || "";
   transferHelpNote.textContent = content;
   transferHelpNote.classList.toggle("is-visible", Boolean(content));
+}
+
+function setTransferDetailsExpanded(expanded) {
+  if (!transferGrid || !transferDetailsToggle) {
+    return;
+  }
+
+  transferGrid.classList.toggle("is-details-collapsed", !expanded);
+  transferDetailsToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
 }
 
 function renderTransferLog() {
@@ -611,6 +622,7 @@ function bindTransferLauncher() {
   }
 
   renderTransferMode(currentTransferMode);
+  setTransferDetailsExpanded(false);
 
   transferButton.addEventListener("click", async () => {
     await startTransfer("tcp");
@@ -619,6 +631,13 @@ function bindTransferLauncher() {
   udpTransferButton.addEventListener("click", async () => {
     await startTransfer("udp");
   });
+
+  if (transferDetailsToggle) {
+    transferDetailsToggle.addEventListener("click", () => {
+      const isExpanded = transferDetailsToggle.getAttribute("aria-expanded") === "true";
+      setTransferDetailsExpanded(!isExpanded);
+    });
+  }
 }
 
 renderActiveNavigation();

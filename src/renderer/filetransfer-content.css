@@ -66,6 +66,11 @@
   align-items: stretch;
 }
 
+.transfer-grid.is-details-collapsed .transfer-stack-column,
+.transfer-grid.is-details-collapsed .command-card {
+  display: none;
+}
+
 .transfer-card {
   padding: 22px;
 }
@@ -299,6 +304,13 @@
   gap: 10px;
 }
 
+.receive-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-end;
+}
+
 .queue-chip,
 .note-pill {
   display: inline-flex;
@@ -342,6 +354,33 @@
   margin: 8px 0 0;
   color: #4f657a;
   font-weight: 700;
+}
+
+.details-toggle {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(104, 136, 168, 0.16);
+  border-radius: 14px;
+  background:
+    rgba(255, 255, 255, 0.94)
+    url("./assets/filetransfer/transinfo-icon.png")
+    center / 22px 22px no-repeat;
+  box-shadow: 0 12px 24px rgba(57, 84, 120, 0.12);
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    background-color 140ms ease;
+}
+
+.details-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(57, 84, 120, 0.16);
+}
+
+.details-toggle[aria-expanded="true"] {
+  background-color: rgba(233, 243, 251, 0.96);
 }
 
 .summary-stack {
@@ -398,5 +437,14 @@
 
   .command-item {
     grid-template-columns: 1fr;
+  }
+
+  .receive-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .details-toggle {
+    align-self: flex-end;
   }
 }
