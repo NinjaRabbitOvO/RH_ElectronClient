@@ -510,6 +510,7 @@
   width: min(820px, calc(100vw - 72px));
   max-height: min(78vh, 760px);
   display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 18px;
   padding: clamp(20px, 3vw, 28px);
   overflow: hidden;
@@ -557,9 +558,13 @@
 
 .received-modal-list {
   display: grid;
+  grid-auto-rows: min-content;
   gap: 10px;
+  min-height: 0;
   overflow: auto;
   padding-right: 4px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .received-modal-empty {
