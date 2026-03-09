@@ -260,7 +260,7 @@ function parseDatFile(folderName, fileName) {
   const batV = readUInt32LE(buffer, 60, "Bat_v");
 
   const utcFormatted = formatUtc(year, month, day, hour, minute);
-  const utcLine = `UTC ${utcFormatted} | TZ ${timezone} | Lat ${latitude.toFixed(6)} | Lon ${longitude.toFixed(6)}`;
+  const utcLine = `UTC ${utcFormatted} | TimeZone ${timezone} | Lat ${latitude.toFixed(6)} | Lon ${longitude.toFixed(6)}`;
 
   let sampleSize = 0;
   let startTimestamp = 0;
