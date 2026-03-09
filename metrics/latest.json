@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-03T22:38:38.586Z",
-  "headCommit": "c7c8c086b4f2c40675187e912a0d76df98c3d9ca",
+  "timestamp": "2026-03-09T00:41:08.715Z",
+  "headCommit": "f0b31074ea76b5f0ab92ed478c4d2f7169675665",
   "baselines": {
     "projectBaselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
     "trackingStartCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
@@ -8,36 +8,36 @@
   },
   "projectTotals": {
     "baselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
-    "changedFiles": 23,
-    "writtenLines": 4035,
-    "deletedLines": 73,
-    "changeLines": 4108,
-    "totalCommitCount": 27,
+    "changedFiles": 27,
+    "writtenLines": 4183,
+    "deletedLines": 86,
+    "changeLines": 4269,
+    "totalCommitCount": 28,
     "featureCommitCount": 13,
-    "adjustmentCommitCount": 10
+    "adjustmentCommitCount": 11
   },
   "trackingTotals": {
     "baselineCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
-    "changedFiles": 11,
-    "writtenLines": 1023,
-    "deletedLines": 13,
-    "changeLines": 1036,
-    "totalCommitCount": 8,
+    "changedFiles": 15,
+    "writtenLines": 1173,
+    "deletedLines": 28,
+    "changeLines": 1201,
+    "totalCommitCount": 9,
     "featureCommitCount": 3,
-    "adjustmentCommitCount": 3
+    "adjustmentCommitCount": 4
   },
   "currentTotals": {
-    "totalLines": 4077,
-    "sourceFileCount": 18
+    "totalLines": 4212,
+    "sourceFileCount": 19
   },
   "majorSourceFiles": [
     {
       "file": "src/renderer/shell.js",
-      "lines": 852
+      "lines": 858
     },
     {
       "file": "src/renderer/filetransfer-content.css",
-      "lines": 681
+      "lines": 702
     },
     {
       "file": "udp_file_client.py",
@@ -60,12 +60,12 @@
       "lines": 242
     },
     {
-      "file": "PlusWifi_Client.py",
-      "lines": 214
+      "file": "src/main/services/filetransfer.js",
+      "lines": 231
     },
     {
-      "file": "src/main/services/filetransfer.js",
-      "lines": 195
+      "file": "PlusWifi_Client.py",
+      "lines": 214
     },
     {
       "file": "src/renderer/info.html",
@@ -78,8 +78,12 @@
       "lines": 214
     },
     {
+      "file": "ReadData.py",
+      "lines": 68
+    },
+    {
       "file": "forge.config.js",
-      "lines": 45
+      "lines": 49
     },
     {
       "file": "src/main/index.js",
@@ -91,7 +95,7 @@
     },
     {
       "file": "src/main/services/filetransfer.js",
-      "lines": 195
+      "lines": 231
     },
     {
       "file": "src/main/windows/main-window.js",
@@ -103,7 +107,7 @@
     },
     {
       "file": "src/renderer/filetransfer-content.css",
-      "lines": 681
+      "lines": 702
     },
     {
       "file": "src/renderer/filetransfer-content.html",
@@ -131,7 +135,7 @@
     },
     {
       "file": "src/renderer/shell.js",
-      "lines": 852
+      "lines": 858
     },
     {
       "file": "src/shared/ipc.js",

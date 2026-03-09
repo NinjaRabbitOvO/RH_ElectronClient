@@ -314,11 +314,17 @@ function renderReceivedTransferBrowser() {
   receivedTransferFolders.forEach((folder) => {
     const card = document.createElement("article");
     card.className = "received-folder-card";
+    if (folder.isSpecial) {
+      card.classList.add("is-special-row");
+    }
 
     const trigger = document.createElement("button");
     trigger.className = "received-folder-button";
     trigger.type = "button";
-    trigger.setAttribute("aria-label", `Open received files for ${folder.dateLabel}`);
+    trigger.setAttribute(
+      "aria-label",
+      `Open received files for ${folder.dateLabel}`,
+    );
 
     const icon = document.createElement("span");
     icon.className = "received-folder-icon";
@@ -333,7 +339,7 @@ function renderReceivedTransferBrowser() {
 
     const type = document.createElement("span");
     type.className = "received-folder-type";
-    type.textContent = `${folder.protocolHint} Folder`;
+    type.textContent = folder.isSpecial ? "Showcase Folder" : `${folder.protocolHint} Folder`;
 
     const size = document.createElement("span");
     size.className = "received-folder-size";

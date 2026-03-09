@@ -417,6 +417,11 @@
   border: 1px solid rgba(104, 136, 168, 0.1);
 }
 
+.received-folder-card.is-special-row {
+  grid-column: 1 / -1;
+  padding: 16px 18px;
+}
+
 .received-folder-button {
   display: grid;
   justify-items: start;
@@ -431,6 +436,13 @@
 
 .received-folder-button:hover {
   transform: translateY(-2px);
+}
+
+.received-folder-card.is-special-row .received-folder-button {
+  width: 100%;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
 }
 
 .received-folder-icon {
@@ -463,6 +475,10 @@
 .received-folder-meta {
   display: grid;
   gap: 4px;
+}
+
+.received-folder-card.is-special-row .received-folder-meta {
+  gap: 2px;
 }
 
 .received-folder-date {
@@ -677,5 +693,10 @@
   .received-file-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .received-folder-card.is-special-row .received-folder-button {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }

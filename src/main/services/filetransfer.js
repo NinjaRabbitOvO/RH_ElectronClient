@@ -6,6 +6,7 @@ const UDP_SCRIPT_PATH = path.join(__dirname, "..", "..", "..", "udp_file_client.
 const EXECUTION_TIMEOUT_MS = 10 * 60 * 1000;
 const { IPC_CHANNELS } = require("../../shared/ipc");
 const RECEIVE_DIR_PATTERN = /^(RE|Re)(\d{8})$/;
+const EXAMPLE_DATA_FOLDER_NAME = "ExampleData";
 
 let activeTransfer = null;
 
@@ -35,6 +36,36 @@ function formatTransferDate(dateText) {
   return `${dateText.slice(0, 4)}-${dateText.slice(4, 6)}-${dateText.slice(6, 8)}`;
 }
 
+function listFolderFiles(folderPath) {
+  return fs
+    .readdirSync(folderPath, { withFileTypes: true })
+    .filter((item) => item.isFile())
+    .map((item) => {
+      const absolutePath = path.join(folderPath, item.name);
+      const { size } = fs.statSync(absolutePath);
+
+      return {
+        name: item.name,
+        size,
+      };
+    })
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function resolveExampleDataPath(rootDirectory) {
+  const localPath = path.join(rootDirectory, EXAMPLE_DATA_FOLDER_NAME);
+  if (fs.existsSync(localPath) && fs.statSync(localPath).isDirectory()) {
+    return localPath;
+  }
+
+  const packagedPath = path.join(process.resourcesPath, EXAMPLE_DATA_FOLDER_NAME);
+  if (fs.existsSync(packagedPath) && fs.statSync(packagedPath).isDirectory()) {
+    return packagedPath;
+  }
+
+  return "";
+}
+
 function listReceivedTransfers() {
   const rootDirectory = path.dirname(TCP_SCRIPT_PATH);
   const folders = [];
@@ -53,19 +84,7 @@ function listReceivedTransfers() {
     }
 
     const folderPath = path.join(rootDirectory, entry.name);
-    const files = fs
-      .readdirSync(folderPath, { withFileTypes: true })
-      .filter((item) => item.isFile())
-      .map((item) => {
-        const absolutePath = path.join(folderPath, item.name);
-        const { size } = fs.statSync(absolutePath);
-
-        return {
-          name: item.name,
-          size,
-        };
-      })
-      .sort((left, right) => left.name.localeCompare(right.name));
+    const files = listFolderFiles(folderPath);
 
     const dateCode = match[2];
 
@@ -77,10 +96,27 @@ function listReceivedTransfers() {
       fileCount: files.length,
       totalBytes: files.reduce((sum, file) => sum + file.size, 0),
       files,
+      isSpecial: false,
     });
   });
 
   folders.sort((left, right) => right.dateCode.localeCompare(left.dateCode));
+
+  const exampleDataPath = resolveExampleDataPath(rootDirectory);
+  if (exampleDataPath) {
+    const files = listFolderFiles(exampleDataPath);
+
+    folders.push({
+      folderName: EXAMPLE_DATA_FOLDER_NAME,
+      dateCode: "",
+      dateLabel: EXAMPLE_DATA_FOLDER_NAME,
+      protocolHint: "Example",
+      fileCount: files.length,
+      totalBytes: files.reduce((sum, file) => sum + file.size, 0),
+      files,
+      isSpecial: true,
+    });
+  }
 
   return {
     ok: true,
