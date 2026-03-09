@@ -293,6 +293,77 @@ function renderReceivedBrowserMessage(className, text) {
   receivedBrowser.append(message);
 }
 
+function createReceivedFolderCard(folder) {
+  const card = document.createElement("article");
+  card.className = "received-folder-card";
+  if (folder.isSpecial) {
+    card.classList.add("is-special-row");
+  }
+
+  const trigger = document.createElement("button");
+  trigger.className = "received-folder-button";
+  trigger.type = "button";
+  trigger.setAttribute(
+    "aria-label",
+    `Open received files for ${folder.dateLabel}`,
+  );
+
+  const icon = document.createElement("span");
+  icon.className = "received-folder-icon";
+  icon.textContent = String(folder.fileCount);
+
+  const meta = document.createElement("div");
+  meta.className = "received-folder-meta";
+
+  const date = document.createElement("strong");
+  date.className = "received-folder-date";
+  date.textContent = folder.dateLabel;
+
+  const type = document.createElement("span");
+  type.className = "received-folder-type";
+  type.textContent = folder.isSpecial ? "Showcase Folder" : `${folder.protocolHint} Folder`;
+
+  const size = document.createElement("span");
+  size.className = "received-folder-size";
+  size.textContent = `${folder.fileCount} files | ${formatBytes(folder.totalBytes)}`;
+
+  meta.append(date, type, size);
+  trigger.append(icon, meta);
+  trigger.addEventListener("click", () => {
+    openReceivedFolderModal(folder.folderName);
+  });
+  card.append(trigger);
+
+  return card;
+}
+
+function createReceivedSection(title, subtitle, folders, extraClassName = "") {
+  const section = document.createElement("section");
+  section.className = `received-section${extraClassName ? ` ${extraClassName}` : ""}`;
+
+  const head = document.createElement("header");
+  head.className = "received-section-head";
+
+  const heading = document.createElement("h4");
+  heading.className = "received-section-title";
+  heading.textContent = title;
+
+  const copy = document.createElement("p");
+  copy.className = "received-section-copy";
+  copy.textContent = subtitle;
+
+  const grid = document.createElement("div");
+  grid.className = "received-folder-grid";
+
+  folders.forEach((folder) => {
+    grid.append(createReceivedFolderCard(folder));
+  });
+
+  head.append(heading, copy);
+  section.append(head, grid);
+  return section;
+}
+
 function renderReceivedTransferBrowser() {
   if (!receivedBrowser) {
     return;
@@ -300,7 +371,10 @@ function renderReceivedTransferBrowser() {
 
   receivedBrowser.replaceChildren();
 
-  if (!receivedTransferFolders.length) {
+  const specialFolders = receivedTransferFolders.filter((folder) => folder.isSpecial);
+  const regularFolders = receivedTransferFolders.filter((folder) => !folder.isSpecial);
+
+  if (!specialFolders.length && !regularFolders.length) {
     renderReceivedBrowserMessage(
       "received-empty",
       "No received files yet. Completed transfers will appear here by date.",
@@ -308,54 +382,32 @@ function renderReceivedTransferBrowser() {
     return;
   }
 
-  const grid = document.createElement("div");
-  grid.className = "received-folder-grid";
-
-  receivedTransferFolders.forEach((folder) => {
-    const card = document.createElement("article");
-    card.className = "received-folder-card";
-    if (folder.isSpecial) {
-      card.classList.add("is-special-row");
-    }
-
-    const trigger = document.createElement("button");
-    trigger.className = "received-folder-button";
-    trigger.type = "button";
-    trigger.setAttribute(
-      "aria-label",
-      `Open received files for ${folder.dateLabel}`,
+  if (specialFolders.length) {
+    receivedBrowser.append(
+      createReceivedSection(
+        "Example Data",
+        "Showcase dataset bundled with the app for preview and demonstration.",
+        specialFolders,
+        "is-special",
+      ),
     );
+  }
 
-    const icon = document.createElement("span");
-    icon.className = "received-folder-icon";
-    icon.textContent = String(folder.fileCount);
+  if (regularFolders.length) {
+    receivedBrowser.append(
+      createReceivedSection(
+        "Received Transfers",
+        "Files captured from device transfers, grouped by date.",
+        regularFolders,
+      ),
+    );
+    return;
+  }
 
-    const meta = document.createElement("div");
-    meta.className = "received-folder-meta";
-
-    const date = document.createElement("strong");
-    date.className = "received-folder-date";
-    date.textContent = folder.dateLabel;
-
-    const type = document.createElement("span");
-    type.className = "received-folder-type";
-    type.textContent = folder.isSpecial ? "Showcase Folder" : `${folder.protocolHint} Folder`;
-
-    const size = document.createElement("span");
-    size.className = "received-folder-size";
-    size.textContent = `${folder.fileCount} files | ${formatBytes(folder.totalBytes)}`;
-
-    meta.append(date, type, size);
-    trigger.append(icon, meta);
-    trigger.addEventListener("click", () => {
-      openReceivedFolderModal(folder.folderName);
-    });
-    card.append(trigger);
-
-    grid.append(card);
-  });
-
-  receivedBrowser.append(grid);
+  const empty = document.createElement("p");
+  empty.className = "received-empty";
+  empty.textContent = "No actual receive folders yet. Start a transfer to populate this section.";
+  receivedBrowser.append(empty);
 }
 
 function findReceivedFolder(folderName) {
