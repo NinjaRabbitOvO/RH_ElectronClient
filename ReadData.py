@@ -79,6 +79,11 @@ def summarize_axis(
         print(f"{axis_name} high-value alerts: none")
         return
 
+    if max_items <= 0:
+        preview_text = ", ".join(f"idx {index}={value}" for index, value in anomalies)
+        print(f"{axis_name} high-value alerts ({len(anomalies)}): {preview_text}")
+        return
+
     top_items = sorted(anomalies, key=lambda item: item[1], reverse=True)[:max_items]
     preview_text = ", ".join(f"idx {index}={value}" for index, value in top_items)
     extra_count = len(anomalies) - len(top_items)
@@ -207,12 +212,20 @@ def parse_args() -> argparse.Namespace:
         "--preview",
         type=int,
         default=12,
-        help="How many values to show at the head/tail when not using --full.",
+        help="How many values to show at the head/tail when using --preview-only.",
     )
     parser.add_argument(
         "--full",
+        dest="full",
         action="store_true",
-        help="Print full sample arrays without truncation.",
+        default=True,
+        help="Print full sample arrays without truncation (default).",
+    )
+    parser.add_argument(
+        "--preview-only",
+        dest="full",
+        action="store_false",
+        help="Print head/tail preview instead of full arrays.",
     )
     parser.add_argument(
         "--strict",
@@ -234,8 +247,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--anomaly-limit",
         type=int,
-        default=8,
-        help="Maximum number of high-value alerts to print for each axis.",
+        default=0,
+        help="Maximum number of high-value alerts to print for each axis (0 means all).",
     )
     return parser.parse_args()
 
@@ -262,7 +275,7 @@ def main() -> int:
                 full=args.full,
                 anomaly_sigma=max(0.0, args.anomaly_sigma),
                 anomaly_min_gap=max(0.0, args.anomaly_min_gap),
-                anomaly_limit=max(1, args.anomaly_limit),
+                anomaly_limit=max(0, args.anomaly_limit),
             )
         except ParseError as error:
             has_error = True
