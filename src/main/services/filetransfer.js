@@ -282,9 +282,18 @@ function parseDatFile(folderName, fileName) {
     offset = zSeries.nextOffset;
 
     axis = {
-      x: summarizeAxis(xSeries.values),
-      y: summarizeAxis(ySeries.values),
-      z: summarizeAxis(zSeries.values),
+      x: {
+        ...summarizeAxis(xSeries.values),
+        values: xSeries.values,
+      },
+      y: {
+        ...summarizeAxis(ySeries.values),
+        values: ySeries.values,
+      },
+      z: {
+        ...summarizeAxis(zSeries.values),
+        values: zSeries.values,
+      },
     };
 
     sampleSize2 = readUInt32LE(buffer, offset, "Sample_Size2");

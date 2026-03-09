@@ -458,6 +458,169 @@ function createViewerGrid(items) {
   return grid;
 }
 
+function downsampleSeries(values, maxPoints = 420) {
+  if (!Array.isArray(values) || !values.length) {
+    return [];
+  }
+
+  if (values.length <= maxPoints) {
+    return values
+      .map((value, index) => ({ index, value: Number(value) }))
+      .filter((point) => Number.isFinite(point.value));
+  }
+
+  const step = values.length / maxPoints;
+  const points = [];
+
+  for (let slot = 0; slot < maxPoints; slot += 1) {
+    const sourceIndex = Math.min(values.length - 1, Math.floor((slot + 0.5) * step));
+    const value = Number(values[sourceIndex]);
+    if (Number.isFinite(value)) {
+      points.push({ index: sourceIndex, value });
+    }
+  }
+
+  return points;
+}
+
+function drawAxisChart(canvas, axisData) {
+  const rawValues = axisData && Array.isArray(axisData.values) ? axisData.values : [];
+  const points = downsampleSeries(rawValues);
+  const context = canvas.getContext("2d");
+  if (!context) {
+    return;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  const cssWidth = Math.max(360, Math.floor(rect.width || 640));
+  const cssHeight = Math.max(160, Math.floor(rect.height || 190));
+  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width = Math.floor(cssWidth * pixelRatio);
+  canvas.height = Math.floor(cssHeight * pixelRatio);
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  context.clearRect(0, 0, cssWidth, cssHeight);
+
+  if (!points.length) {
+    context.fillStyle = "#6f87a0";
+    context.font = "600 14px 'Segoe UI', sans-serif";
+    context.fillText("No sample points in this file.", 14, 28);
+    return;
+  }
+
+  const threshold = Number(axisData && axisData.threshold);
+  const valuesOnly = points.map((point) => point.value);
+  let minValue = Math.min(...valuesOnly);
+  let maxValue = Math.max(...valuesOnly);
+
+  if (Number.isFinite(threshold)) {
+    minValue = Math.min(minValue, threshold);
+    maxValue = Math.max(maxValue, threshold);
+  }
+
+  if (minValue === maxValue) {
+    minValue -= 1;
+    maxValue += 1;
+  }
+
+  const padding = { top: 14, right: 12, bottom: 20, left: 52 };
+  const chartWidth = cssWidth - padding.left - padding.right;
+  const chartHeight = cssHeight - padding.top - padding.bottom;
+  const toY = (value) => {
+    const ratio = (value - minValue) / (maxValue - minValue);
+    return padding.top + chartHeight - ratio * chartHeight;
+  };
+
+  context.strokeStyle = "rgba(104, 136, 168, 0.28)";
+  context.lineWidth = 1;
+  for (let tick = 0; tick <= 4; tick += 1) {
+    const y = padding.top + (chartHeight / 4) * tick;
+    context.beginPath();
+    context.moveTo(padding.left, y);
+    context.lineTo(padding.left + chartWidth, y);
+    context.stroke();
+
+    const labelValue = maxValue - ((maxValue - minValue) / 4) * tick;
+    context.fillStyle = "#6f87a0";
+    context.font = "600 11px 'Segoe UI', sans-serif";
+    context.fillText(labelValue.toFixed(1), 8, y + 4);
+  }
+
+  if (Number.isFinite(threshold)) {
+    const thresholdY = toY(threshold);
+    context.save();
+    context.setLineDash([7, 5]);
+    context.strokeStyle = "rgba(218, 89, 89, 0.88)";
+    context.beginPath();
+    context.moveTo(padding.left, thresholdY);
+    context.lineTo(padding.left + chartWidth, thresholdY);
+    context.stroke();
+    context.restore();
+
+    context.fillStyle = "#c44747";
+    context.font = "700 11px 'Segoe UI', sans-serif";
+    context.fillText("threshold", padding.left + 8, Math.max(12, thresholdY - 7));
+  }
+
+  context.strokeStyle = "#2f78b7";
+  context.lineWidth = 2;
+  context.beginPath();
+  points.forEach((point, index) => {
+    const x =
+      points.length === 1
+        ? padding.left
+        : padding.left + (chartWidth * index) / (points.length - 1);
+    const y = toY(point.value);
+    if (index === 0) {
+      context.moveTo(x, y);
+    } else {
+      context.lineTo(x, y);
+    }
+  });
+  context.stroke();
+
+  if (Number.isFinite(threshold) && Array.isArray(axisData.highAlerts) && axisData.highAlerts.length) {
+    const maxIndex = Math.max(1, rawValues.length - 1);
+    context.fillStyle = "#da5959";
+    axisData.highAlerts.forEach((alert) => {
+      const x = padding.left + (chartWidth * Number(alert.index || 0)) / maxIndex;
+      const y = toY(Number(alert.value || 0));
+      context.beginPath();
+      context.arc(x, y, 3.2, 0, Math.PI * 2);
+      context.fill();
+    });
+  }
+}
+
+function createAxisChart(axisLabel, axisData) {
+  const panel = document.createElement("div");
+  panel.className = "received-axis-chart";
+
+  const head = document.createElement("div");
+  head.className = "received-axis-chart-head";
+
+  const title = document.createElement("span");
+  title.className = "received-axis-chart-title";
+  title.textContent = `${axisLabel} Data Chart`;
+
+  const meta = document.createElement("span");
+  meta.className = "received-axis-chart-meta";
+  meta.textContent =
+    `${axisData.count} pts | min ${formatViewerNumber(axisData.min)} | max ${formatViewerNumber(axisData.max)}`;
+
+  const canvas = document.createElement("canvas");
+  canvas.className = "received-axis-canvas";
+  canvas.setAttribute("aria-label", `${axisLabel} axis chart`);
+
+  head.append(title, meta);
+  panel.append(head, canvas);
+
+  requestAnimationFrame(() => {
+    drawAxisChart(canvas, axisData);
+  });
+
+  return panel;
+}
+
 function renderAxisSection(axisLabel, axisData) {
   const section = document.createElement("section");
   section.className = "received-viewer-section";
@@ -479,15 +642,15 @@ function renderAxisSection(axisLabel, axisData) {
 
   const alertText = document.createElement("p");
   alertText.className = "received-viewer-note";
+  section.append(alertText);
 
   if (!axisData.highCount || !Array.isArray(axisData.highAlerts) || !axisData.highAlerts.length) {
     alertText.textContent = "No high-value alerts.";
-    section.append(alertText);
+    section.append(createAxisChart(axisLabel, axisData));
     return section;
   }
 
   alertText.textContent = `Top ${axisData.highAlerts.length} high-value alerts:`;
-  section.append(alertText);
 
   const alerts = document.createElement("ul");
   alerts.className = "received-viewer-alerts";
@@ -496,7 +659,7 @@ function renderAxisSection(axisLabel, axisData) {
     line.textContent = `idx ${entry.index} = ${entry.value}`;
     alerts.append(line);
   });
-  section.append(alerts);
+  section.append(alerts, createAxisChart(axisLabel, axisData));
 
   return section;
 }
