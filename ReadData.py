@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import statistics
 import struct
 from pathlib import Path
 from typing import Sequence
@@ -48,7 +49,52 @@ def format_preview(values: Sequence[int], preview: int, full: bool) -> str:
     return f"{head},...,{tail}"
 
 
-def parse_file(path: Path, preview: int, full: bool) -> None:
+def summarize_axis(
+    axis_name: str,
+    values: Sequence[int],
+    sigma: float,
+    min_gap: float,
+    max_items: int,
+) -> None:
+    if not values:
+        print(f"{axis_name} statistics: no values")
+        return
+
+    mean_value = statistics.fmean(values)
+    median_value = statistics.median(values)
+    std_value = statistics.pstdev(values) if len(values) > 1 else 0.0
+
+    threshold = max(
+        mean_value + max(min_gap, sigma * std_value),
+        median_value + max(min_gap, sigma * std_value),
+    )
+    anomalies = [(index, value) for index, value in enumerate(values) if value > threshold]
+
+    print(
+        f"{axis_name} statistics: mean={mean_value:.3f}, "
+        f"median={median_value:.3f}, std={std_value:.3f}, "
+        f"high-threshold>{threshold:.3f}"
+    )
+    if not anomalies:
+        print(f"{axis_name} high-value alerts: none")
+        return
+
+    top_items = sorted(anomalies, key=lambda item: item[1], reverse=True)[:max_items]
+    preview_text = ", ".join(f"idx {index}={value}" for index, value in top_items)
+    extra_count = len(anomalies) - len(top_items)
+    if extra_count > 0:
+        preview_text = f"{preview_text}, ... (+{extra_count} more)"
+    print(f"{axis_name} high-value alerts ({len(anomalies)}): {preview_text}")
+
+
+def parse_file(
+    path: Path,
+    preview: int,
+    full: bool,
+    anomaly_sigma: float,
+    anomaly_min_gap: float,
+    anomaly_limit: int,
+) -> None:
     data = path.read_bytes()
     if len(data) < HEADER_WITH_SAMPLE_INFO_LEN:
         raise ParseError(
@@ -114,6 +160,9 @@ def parse_file(path: Path, preview: int, full: bool) -> None:
     print(format_preview(y_values, preview, full))
     print(f"Z list ({len(z_values)}):")
     print(format_preview(z_values, preview, full))
+    summarize_axis("X", x_values, anomaly_sigma, anomaly_min_gap, anomaly_limit)
+    summarize_axis("Y", y_values, anomaly_sigma, anomaly_min_gap, anomaly_limit)
+    summarize_axis("Z", z_values, anomaly_sigma, anomaly_min_gap, anomaly_limit)
 
     sample_size2 = read_u32_le(data, offset, "Sample_Size2")
     offset += 4
@@ -170,6 +219,24 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Exit with non-zero status if any file fails to parse.",
     )
+    parser.add_argument(
+        "--anomaly-sigma",
+        type=float,
+        default=4.0,
+        help="Sigma multiplier for high-value alert threshold.",
+    )
+    parser.add_argument(
+        "--anomaly-min-gap",
+        type=float,
+        default=20.0,
+        help="Minimum numeric gap above mean/median before flagging high values.",
+    )
+    parser.add_argument(
+        "--anomaly-limit",
+        type=int,
+        default=8,
+        help="Maximum number of high-value alerts to print for each axis.",
+    )
     return parser.parse_args()
 
 
@@ -189,7 +256,14 @@ def main() -> int:
     has_error = False
     for file_path in targets:
         try:
-            parse_file(file_path, preview=max(1, args.preview), full=args.full)
+            parse_file(
+                file_path,
+                preview=max(1, args.preview),
+                full=args.full,
+                anomaly_sigma=max(0.0, args.anomaly_sigma),
+                anomaly_min_gap=max(0.0, args.anomaly_min_gap),
+                anomaly_limit=max(1, args.anomaly_limit),
+            )
         except ParseError as error:
             has_error = True
             print(f"[ReadData] {file_path}: {error}")
