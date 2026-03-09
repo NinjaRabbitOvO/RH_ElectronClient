@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-09T00:43:59.204Z",
-  "headCommit": "84fe47026ad5516b8c0eac419ca11ea8ead7cce4",
+  "timestamp": "2026-03-09T01:24:34.487Z",
+  "headCommit": "76d27165bc6f22768061dfc42a9fdf1f3af22f17",
   "baselines": {
     "projectBaselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
     "trackingStartCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
@@ -8,26 +8,26 @@
   },
   "projectTotals": {
     "baselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
-    "changedFiles": 25,
-    "writtenLines": 4304,
-    "deletedLines": 117,
-    "changeLines": 4421,
-    "totalCommitCount": 29,
+    "changedFiles": 24,
+    "writtenLines": 4462,
+    "deletedLines": 135,
+    "changeLines": 4597,
+    "totalCommitCount": 30,
     "featureCommitCount": 14,
-    "adjustmentCommitCount": 11
+    "adjustmentCommitCount": 12
   },
   "trackingTotals": {
     "baselineCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
-    "changedFiles": 14,
-    "writtenLines": 1294,
-    "deletedLines": 59,
-    "changeLines": 1353,
-    "totalCommitCount": 10,
+    "changedFiles": 13,
+    "writtenLines": 1452,
+    "deletedLines": 77,
+    "changeLines": 1529,
+    "totalCommitCount": 11,
     "featureCommitCount": 4,
-    "adjustmentCommitCount": 4
+    "adjustmentCommitCount": 5
   },
   "currentTotals": {
-    "totalLines": 4302,
+    "totalLines": 4442,
     "sourceFileCount": 19
   },
   "majorSourceFiles": [
@@ -68,8 +68,8 @@
       "lines": 214
     },
     {
-      "file": "src/renderer/info.html",
-      "lines": 192
+      "file": "ReadData.py",
+      "lines": 208
     }
   ],
   "sourceFileBreakdown": [
@@ -79,7 +79,7 @@
     },
     {
       "file": "ReadData.py",
-      "lines": 68
+      "lines": 208
     },
     {
       "file": "forge.config.js",
