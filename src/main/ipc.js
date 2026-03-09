@@ -3,6 +3,7 @@ const { ipcMain } = require("electron");
 const { IPC_CHANNELS } = require("../shared/ipc");
 const {
   listReceivedTransfers,
+  readReceivedDatFile,
   runPythonTransfer,
   runUdpTransfer,
 } = require("./services/filetransfer");
@@ -17,6 +18,9 @@ function registerIpcHandlers() {
   });
   ipcMain.handle(IPC_CHANNELS.listReceivedTransfers, async () => {
     return listReceivedTransfers();
+  });
+  ipcMain.handle(IPC_CHANNELS.readReceivedDatFile, async (_event, request) => {
+    return readReceivedDatFile(request);
   });
 }
 

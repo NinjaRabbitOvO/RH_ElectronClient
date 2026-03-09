@@ -32,6 +32,7 @@ const receivedFolderClose = document.getElementById("received-folder-close");
 const receivedFolderTitle = document.getElementById("received-folder-title");
 const receivedFolderSummary = document.getElementById("received-folder-summary");
 const receivedFolderList = document.getElementById("received-folder-list");
+const receivedFileViewer = document.getElementById("received-file-viewer");
 const TRANSFER_EVENT_PREFIX = "@@EVENT@@ ";
 const filetransferApi =
   window.appApi && window.appApi.filetransfer ? window.appApi.filetransfer : null;
@@ -103,6 +104,8 @@ let transferRuntime = {
 };
 let receivedTransferFolders = [];
 let activeReceivedFolder = "";
+let activeReceivedFileName = "";
+let receivedViewerRequestId = 0;
 const TRANSFER_FAILURE_NOTE =
   "Please verify that you are connected to a nearby device via Wi-Fi, then restart the transfer.";
 
@@ -414,6 +417,198 @@ function findReceivedFolder(folderName) {
   return receivedTransferFolders.find((folder) => folder.folderName === folderName) || null;
 }
 
+function formatViewerNumber(value, fractionDigits = 3) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return "N/A";
+  }
+  return numeric.toFixed(fractionDigits);
+}
+
+function renderReceivedViewerMessage(className, text) {
+  if (!receivedFileViewer) {
+    return;
+  }
+
+  receivedFileViewer.replaceChildren();
+  const message = document.createElement("p");
+  message.className = className;
+  message.textContent = text;
+  receivedFileViewer.append(message);
+}
+
+function createViewerGrid(items) {
+  const grid = document.createElement("div");
+  grid.className = "received-viewer-grid";
+
+  items.forEach(([label, value]) => {
+    const item = document.createElement("div");
+    item.className = "received-viewer-item";
+
+    const key = document.createElement("span");
+    key.textContent = label;
+
+    const data = document.createElement("strong");
+    data.textContent = value;
+
+    item.append(key, data);
+    grid.append(item);
+  });
+
+  return grid;
+}
+
+function renderAxisSection(axisLabel, axisData) {
+  const section = document.createElement("section");
+  section.className = "received-viewer-section";
+
+  const heading = document.createElement("h5");
+  heading.textContent = `${axisLabel} Axis`;
+  section.append(heading);
+
+  section.append(
+    createViewerGrid([
+      ["Count", String(axisData.count)],
+      ["Mean", formatViewerNumber(axisData.mean)],
+      ["Median", formatViewerNumber(axisData.median)],
+      ["Std", formatViewerNumber(axisData.std)],
+      ["Threshold", formatViewerNumber(axisData.threshold)],
+      ["High Alerts", String(axisData.highCount)],
+    ]),
+  );
+
+  const alertText = document.createElement("p");
+  alertText.className = "received-viewer-note";
+
+  if (!axisData.highCount || !Array.isArray(axisData.highAlerts) || !axisData.highAlerts.length) {
+    alertText.textContent = "No high-value alerts.";
+    section.append(alertText);
+    return section;
+  }
+
+  alertText.textContent = `Top ${axisData.highAlerts.length} high-value alerts:`;
+  section.append(alertText);
+
+  const alerts = document.createElement("ul");
+  alerts.className = "received-viewer-alerts";
+  axisData.highAlerts.forEach((entry) => {
+    const line = document.createElement("li");
+    line.textContent = `idx ${entry.index} = ${entry.value}`;
+    alerts.append(line);
+  });
+  section.append(alerts);
+
+  return section;
+}
+
+function renderReceivedDatViewer(payload) {
+  if (!receivedFileViewer) {
+    return;
+  }
+
+  receivedFileViewer.replaceChildren();
+
+  const title = document.createElement("h4");
+  title.className = "received-viewer-title";
+  title.textContent = payload.file.fileName;
+  receivedFileViewer.append(title);
+
+  const utcLine = document.createElement("p");
+  utcLine.className = "received-viewer-line";
+  utcLine.textContent = payload.header.utcLine;
+  receivedFileViewer.append(utcLine);
+
+  const sensors = document.createElement("section");
+  sensors.className = "received-viewer-section";
+  const sensorsTitle = document.createElement("h5");
+  sensorsTitle.textContent = "Sensors";
+  sensors.append(sensorsTitle);
+  sensors.append(
+    createViewerGrid([
+      ["Temp1", formatViewerNumber(payload.sensors.temp1)],
+      ["Temp2", formatViewerNumber(payload.sensors.temp2)],
+      ["Hum Temp", formatViewerNumber(payload.sensors.humTemp)],
+      ["Hum", formatViewerNumber(payload.sensors.hum)],
+      ["Water", formatViewerNumber(payload.sensors.water)],
+      ["Capacitor V", String(payload.sensors.capacitorV)],
+      ["Battery V", String(payload.sensors.batV)],
+      ["File Size", formatBytes(payload.file.sizeBytes)],
+    ]),
+  );
+  receivedFileViewer.append(sensors);
+
+  const sampling = document.createElement("section");
+  sampling.className = "received-viewer-section";
+  const samplingTitle = document.createElement("h5");
+  samplingTitle.textContent = "Sampling";
+  sampling.append(samplingTitle);
+  sampling.append(
+    createViewerGrid([
+      ["Sample Size", String(payload.sampling.sampleSize)],
+      ["Start Timestamp", String(payload.sampling.startTimestamp)],
+      ["Sample Size2", String(payload.sampling.sampleSize2)],
+      ["Trailing Bytes", String(payload.sampling.trailingBytes)],
+    ]),
+  );
+  receivedFileViewer.append(sampling);
+
+  if (payload.axis) {
+    receivedFileViewer.append(renderAxisSection("X", payload.axis.x));
+    receivedFileViewer.append(renderAxisSection("Y", payload.axis.y));
+    receivedFileViewer.append(renderAxisSection("Z", payload.axis.z));
+  } else {
+    const axisNote = document.createElement("p");
+    axisNote.className = "received-viewer-note";
+    axisNote.textContent = "Separator is not 0xFF, no XYZ sample arrays in this file.";
+    receivedFileViewer.append(axisNote);
+  }
+}
+
+async function inspectReceivedDatFile(folderName, fileName) {
+  if (!receivedFileViewer) {
+    return;
+  }
+
+  if (!filetransferApi || typeof filetransferApi.readDat !== "function") {
+    renderReceivedViewerMessage(
+      "received-viewer-error",
+      "Dat parser API is unavailable until the app is restarted.",
+    );
+    return;
+  }
+
+  const requestId = Date.now();
+  receivedViewerRequestId = requestId;
+  renderReceivedViewerMessage("received-viewer-note", "Reading and parsing file...");
+
+  try {
+    const result = await filetransferApi.readDat({ folderName, fileName });
+
+    if (receivedViewerRequestId !== requestId) {
+      return;
+    }
+
+    if (!result || !result.ok) {
+      renderReceivedViewerMessage(
+        "received-viewer-error",
+        result && result.error ? result.error : "Unable to parse selected .dat file.",
+      );
+      return;
+    }
+
+    renderReceivedDatViewer(result.data);
+  } catch (error) {
+    console.error(error);
+    if (receivedViewerRequestId !== requestId) {
+      return;
+    }
+    renderReceivedViewerMessage(
+      "received-viewer-error",
+      "Dat parser failed to respond.",
+    );
+  }
+}
+
 function renderReceivedFolderModal() {
   if (
     !receivedFolderModal ||
@@ -427,9 +622,11 @@ function renderReceivedFolderModal() {
   const folder = activeReceivedFolder ? findReceivedFolder(activeReceivedFolder) : null;
 
   if (!folder) {
+    activeReceivedFileName = "";
     receivedFolderModal.hidden = true;
     receivedFolderModal.classList.remove("is-open");
     receivedFolderModal.setAttribute("aria-hidden", "true");
+    renderReceivedViewerMessage("received-viewer-empty", "Select a .dat file to view parsed content.");
     return;
   }
 
@@ -443,10 +640,22 @@ function renderReceivedFolderModal() {
     empty.className = "received-modal-empty";
     empty.textContent = "This folder is empty right now.";
     receivedFolderList.append(empty);
+    activeReceivedFileName = "";
+    renderReceivedViewerMessage("received-viewer-empty", "No .dat files in this folder.");
   } else {
+    if (!folder.files.some((file) => file.name === activeReceivedFileName)) {
+      activeReceivedFileName = "";
+      renderReceivedViewerMessage("received-viewer-empty", "Select a .dat file to view parsed content.");
+    }
+
     folder.files.forEach((file) => {
-      const row = document.createElement("div");
+      const row = document.createElement("button");
       row.className = "received-file-row";
+      row.type = "button";
+      row.title = `Open ${file.name}`;
+      if (file.name === activeReceivedFileName) {
+        row.classList.add("is-active");
+      }
 
       const name = document.createElement("span");
       name.className = "received-file-name";
@@ -457,6 +666,11 @@ function renderReceivedFolderModal() {
       sizeLabel.textContent = formatBytes(file.size);
 
       row.append(name, sizeLabel);
+      row.addEventListener("click", () => {
+        activeReceivedFileName = file.name;
+        renderReceivedFolderModal();
+        void inspectReceivedDatFile(folder.folderName, file.name);
+      });
       receivedFolderList.append(row);
     });
   }
@@ -472,11 +686,17 @@ function closeReceivedFolderModal() {
   }
 
   activeReceivedFolder = "";
+  activeReceivedFileName = "";
+  receivedViewerRequestId = 0;
+  renderReceivedViewerMessage("received-viewer-empty", "Select a .dat file to view parsed content.");
   renderReceivedFolderModal();
 }
 
 function openReceivedFolderModal(folderName) {
   activeReceivedFolder = folderName;
+  activeReceivedFileName = "";
+  receivedViewerRequestId = 0;
+  renderReceivedViewerMessage("received-viewer-empty", "Select a .dat file to view parsed content.");
   renderReceivedFolderModal();
 }
 
@@ -499,6 +719,8 @@ async function refreshReceivedTransferBrowser() {
 
     if (activeReceivedFolder && !findReceivedFolder(activeReceivedFolder)) {
       activeReceivedFolder = "";
+      activeReceivedFileName = "";
+      receivedViewerRequestId = 0;
     }
 
     renderReceivedTransferBrowser();

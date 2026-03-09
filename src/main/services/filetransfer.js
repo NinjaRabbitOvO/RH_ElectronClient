@@ -7,6 +7,10 @@ const EXECUTION_TIMEOUT_MS = 10 * 60 * 1000;
 const { IPC_CHANNELS } = require("../../shared/ipc");
 const RECEIVE_DIR_PATTERN = /^(RE|Re)(\d{8})$/;
 const EXAMPLE_DATA_FOLDER_NAME = "ExampleData";
+const DAT_EXTENSION_PATTERN = /\.dat$/i;
+const DEFAULT_ANOMALY_SIGMA = 4;
+const DEFAULT_ANOMALY_MIN_GAP = 20;
+const DEFAULT_ALERT_LIMIT = 8;
 
 let activeTransfer = null;
 
@@ -64,6 +68,292 @@ function resolveExampleDataPath(rootDirectory) {
   }
 
   return "";
+}
+
+function readUInt32LE(buffer, offset, label) {
+  if (offset + 4 > buffer.length) {
+    throw new Error(`${label} is truncated at offset ${offset}.`);
+  }
+  return buffer.readUInt32LE(offset);
+}
+
+function readFloatLE(buffer, offset, label) {
+  if (offset + 4 > buffer.length) {
+    throw new Error(`${label} is truncated at offset ${offset}.`);
+  }
+  return buffer.readFloatLE(offset);
+}
+
+function readInt16Values(buffer, offset, count, label) {
+  if (!Number.isInteger(count) || count < 0) {
+    throw new Error(`${label} has invalid count: ${count}.`);
+  }
+
+  const bytes = count * 2;
+  if (offset + bytes > buffer.length) {
+    throw new Error(
+      `${label} is truncated: need ${bytes} bytes at offset ${offset}, `
+      + `but file size is ${buffer.length} bytes.`,
+    );
+  }
+
+  const values = new Array(count);
+  for (let index = 0; index < count; index += 1) {
+    values[index] = buffer.readInt16LE(offset + index * 2);
+  }
+
+  return {
+    values,
+    nextOffset: offset + bytes,
+  };
+}
+
+function padNumber(value, length = 2) {
+  return String(value).padStart(length, "0");
+}
+
+function formatUtc(year, month, day, hour, minute) {
+  return `${padNumber(year, 4)}-${padNumber(month, 2)}-${padNumber(day, 2)}:${padNumber(hour, 2)}:${padNumber(minute, 2)}`;
+}
+
+function summarizeSeries(values) {
+  if (!values.length) {
+    return {
+      count: 0,
+      min: 0,
+      max: 0,
+      mean: 0,
+      median: 0,
+      std: 0,
+    };
+  }
+
+  let min = values[0];
+  let max = values[0];
+  let sum = 0;
+
+  values.forEach((value) => {
+    if (value < min) {
+      min = value;
+    }
+    if (value > max) {
+      max = value;
+    }
+    sum += value;
+  });
+
+  const mean = sum / values.length;
+  let varianceSum = 0;
+  values.forEach((value) => {
+    const delta = value - mean;
+    varianceSum += delta * delta;
+  });
+  const std = Math.sqrt(varianceSum / values.length);
+
+  const sorted = [...values].sort((left, right) => left - right);
+  const middle = Math.floor(sorted.length / 2);
+  const median =
+    sorted.length % 2 === 0
+      ? (sorted[middle - 1] + sorted[middle]) / 2
+      : sorted[middle];
+
+  return {
+    count: values.length,
+    min,
+    max,
+    mean,
+    median,
+    std,
+  };
+}
+
+function summarizeAxis(values) {
+  const stats = summarizeSeries(values);
+  const threshold = Math.max(
+    stats.mean + Math.max(DEFAULT_ANOMALY_MIN_GAP, DEFAULT_ANOMALY_SIGMA * stats.std),
+    stats.median + Math.max(DEFAULT_ANOMALY_MIN_GAP, DEFAULT_ANOMALY_SIGMA * stats.std),
+  );
+
+  const alerts = [];
+  values.forEach((value, index) => {
+    if (value > threshold) {
+      alerts.push({ index, value });
+    }
+  });
+  alerts.sort((left, right) => right.value - left.value);
+
+  return {
+    ...stats,
+    threshold,
+    highCount: alerts.length,
+    highAlerts: alerts.slice(0, DEFAULT_ALERT_LIMIT),
+  };
+}
+
+function resolveReceivedFolderPath(rootDirectory, folderName) {
+  if (folderName === EXAMPLE_DATA_FOLDER_NAME) {
+    const examplePath = resolveExampleDataPath(rootDirectory);
+    if (!examplePath) {
+      throw new Error("ExampleData folder is unavailable.");
+    }
+    return examplePath;
+  }
+
+  if (!RECEIVE_DIR_PATTERN.test(folderName)) {
+    throw new Error("Unsupported folder name.");
+  }
+
+  const folderPath = path.join(rootDirectory, folderName);
+  if (!fs.existsSync(folderPath) || !fs.statSync(folderPath).isDirectory()) {
+    throw new Error("Requested receive folder does not exist.");
+  }
+
+  return folderPath;
+}
+
+function parseDatFile(folderName, fileName) {
+  const rootDirectory = path.dirname(TCP_SCRIPT_PATH);
+
+  if (typeof folderName !== "string" || !folderName.trim()) {
+    throw new Error("folderName is required.");
+  }
+
+  if (typeof fileName !== "string" || !fileName.trim()) {
+    throw new Error("fileName is required.");
+  }
+
+  if (path.basename(fileName) !== fileName) {
+    throw new Error("Invalid fileName.");
+  }
+
+  if (!DAT_EXTENSION_PATTERN.test(fileName)) {
+    throw new Error("Only .dat files are supported.");
+  }
+
+  const folderPath = resolveReceivedFolderPath(rootDirectory, folderName);
+  const filePath = path.join(folderPath, fileName);
+
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+    throw new Error("Requested .dat file does not exist.");
+  }
+
+  const buffer = fs.readFileSync(filePath);
+  if (buffer.length < 72) {
+    throw new Error("File is too short for the expected header format.");
+  }
+
+  const separator = readUInt32LE(buffer, 0, "separator");
+  const year = readUInt32LE(buffer, 4, "UTC year");
+  const month = readUInt32LE(buffer, 8, "UTC month");
+  const day = readUInt32LE(buffer, 12, "UTC day");
+  const hour = readUInt32LE(buffer, 16, "UTC hour");
+  const minute = readUInt32LE(buffer, 20, "UTC minute");
+  const latitude = readFloatLE(buffer, 24, "latitude");
+  const longitude = readFloatLE(buffer, 28, "longitude");
+  const timezone = readUInt32LE(buffer, 32, "UTC zone");
+  const temp1 = readFloatLE(buffer, 36, "TEMP1");
+  const temp2 = readFloatLE(buffer, 40, "TEMP2");
+  const humTemp = readFloatLE(buffer, 44, "HUM_TEMP");
+  const hum = readFloatLE(buffer, 48, "HUM");
+  const water = readFloatLE(buffer, 52, "Water");
+  const capacitorV = readUInt32LE(buffer, 56, "Capacitor_V");
+  const batV = readUInt32LE(buffer, 60, "Bat_v");
+
+  const utcFormatted = formatUtc(year, month, day, hour, minute);
+  const utcLine = `UTC ${utcFormatted} | TZ ${timezone} | Lat ${latitude.toFixed(6)} | Lon ${longitude.toFixed(6)}`;
+
+  let sampleSize = 0;
+  let startTimestamp = 0;
+  let sampleSize2 = 0;
+  let axis = null;
+  let track = null;
+  let trailingBytes = 0;
+
+  if (separator === 0xff) {
+    sampleSize = readUInt32LE(buffer, 64, "Sample_Size");
+    startTimestamp = readUInt32LE(buffer, 68, "Start_Timestamp");
+
+    let offset = 72;
+    const xSeries = readInt16Values(buffer, offset, sampleSize, "X list");
+    offset = xSeries.nextOffset;
+    const ySeries = readInt16Values(buffer, offset, sampleSize, "Y list");
+    offset = ySeries.nextOffset;
+    const zSeries = readInt16Values(buffer, offset, sampleSize, "Z list");
+    offset = zSeries.nextOffset;
+
+    axis = {
+      x: summarizeAxis(xSeries.values),
+      y: summarizeAxis(ySeries.values),
+      z: summarizeAxis(zSeries.values),
+    };
+
+    sampleSize2 = readUInt32LE(buffer, offset, "Sample_Size2");
+    offset += 4;
+    const trackSeries = readInt16Values(buffer, offset, sampleSize2, "Track_return_voltage list");
+    offset = trackSeries.nextOffset;
+    track = summarizeSeries(trackSeries.values);
+
+    trailingBytes = Math.max(0, buffer.length - offset);
+  }
+
+  return {
+    ok: true,
+    data: {
+      file: {
+        folderName,
+        fileName,
+        absolutePath: filePath,
+        sizeBytes: buffer.length,
+      },
+      header: {
+        separator,
+        utc: {
+          year,
+          month,
+          day,
+          hour,
+          minute,
+          formatted: utcFormatted,
+        },
+        timezone,
+        latitude,
+        longitude,
+        utcLine,
+      },
+      sensors: {
+        temp1,
+        temp2,
+        humTemp,
+        hum,
+        water,
+        capacitorV,
+        batV,
+      },
+      sampling: {
+        sampleSize,
+        startTimestamp,
+        sampleSize2,
+        trailingBytes,
+      },
+      axis,
+      track,
+    },
+  };
+}
+
+function readReceivedDatFile(request) {
+  try {
+    if (!request || typeof request !== "object") {
+      throw new Error("Invalid read request.");
+    }
+
+    return parseDatFile(request.folderName, request.fileName);
+  } catch (error) {
+    return {
+      ok: false,
+      error: error && error.message ? error.message : "Failed to parse .dat file.",
+    };
+  }
 }
 
 function listReceivedTransfers() {
@@ -226,6 +516,7 @@ async function runUdpTransfer(webContents, dateText) {
 
 module.exports = {
   listReceivedTransfers,
+  readReceivedDatFile,
   runPythonTransfer,
   runUdpTransfer,
 };
