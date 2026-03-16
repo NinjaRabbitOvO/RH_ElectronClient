@@ -28,46 +28,51 @@
       <section class="page" data-page="filetransfer">
         <div class="page-head">
           <div>
-            <p class="eyebrow">Page</p>
-            <h2>Filetransfer</h2>
+            <p class="eyebrow" data-i18n="shell.pageEyebrow">Page</p>
+            <h2 data-i18n="shell.pageFile">Filetransfer</h2>
           </div>
         </div>
         <div class="surface placeholder-surface">
-          <p class="placeholder-label">filetransfer</p>
+          <p class="placeholder-label" data-i18n="shell.placeholderFile">filetransfer</p>
         </div>
       </section>
 
       <section class="page" data-page="info">
         <div class="page-head">
           <div>
-            <p class="eyebrow">Page</p>
-            <h2>Info</h2>
+            <p class="eyebrow" data-i18n="shell.pageEyebrow">Page</p>
+            <h2 data-i18n="shell.pageInfo">Info</h2>
           </div>
         </div>
         <div class="surface placeholder-surface">
-          <p class="placeholder-label">info</p>
+          <p class="placeholder-label" data-i18n="shell.placeholderInfo">info</p>
         </div>
       </section>
     </main>
 
     <nav class="floating-nav" aria-label="Primary navigation">
-      <a class="nav-button" href="./shell.html" data-page-link="home" title="Home">
+      <a class="nav-button" href="./shell.html" data-page-link="home" title="Home" data-i18n-title="nav.home">
         <span class="nav-icon">H</span>
-        <span class="nav-text">Home</span>
+        <span class="nav-text" data-i18n="nav.home">Home</span>
       </a>
       <a
         class="nav-button"
         href="./filetransfer.html"
         data-page-link="filetransfer"
         title="Filetransfer"
+        data-i18n-title="nav.file"
       >
         <span class="nav-icon">F</span>
-        <span class="nav-text">File</span>
+        <span class="nav-text" data-i18n="nav.file">File</span>
       </a>
-      <a class="nav-button" href="./info.html" data-page-link="info" title="Info">
+      <a class="nav-button" href="./info.html" data-page-link="info" title="Info" data-i18n-title="nav.info">
         <span class="nav-icon">I</span>
-        <span class="nav-text">Info</span>
+        <span class="nav-text" data-i18n="nav.info">Info</span>
       </a>
+      <button id="language-toggle" class="nav-button nav-language-button" type="button" title="Switch language">
+        <span id="language-toggle-icon" class="nav-icon">EN</span>
+        <span id="language-toggle-text" class="nav-text">中文</span>
+      </button>
     </nav>
 
     <script src="./shell.js"></script>

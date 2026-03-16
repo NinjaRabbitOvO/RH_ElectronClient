@@ -461,6 +461,11 @@ h2 {
   text-transform: uppercase;
 }
 
+.nav-language-button .nav-text {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
 @media (max-width: 760px) {
   .app-shell {
     padding: 12px 88px 12px 12px;

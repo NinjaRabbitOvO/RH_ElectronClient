@@ -21,9 +21,9 @@
         <section class="info-layout">
           <section class="surface info-form-card">
             <header class="info-intro">
-              <p class="eyebrow">Contact</p>
-              <h2>Talk To Our Team</h2>
-              <p class="info-intro-copy">
+              <p class="eyebrow" data-i18n="info.eyebrow">Contact</p>
+              <h2 data-i18n="info.title">Talk To Our Team</h2>
+              <p class="info-intro-copy" data-i18n="info.desc">
                 Complete the form below to have a member of our sales team address
                 your business needs.
               </p>
@@ -31,9 +31,9 @@
 
             <form class="info-form" action="#" method="get">
               <label class="info-field">
-                <span>Who would you like to talk to?*</span>
+                <span data-i18n="info.fieldAudience">Who would you like to talk to?*</span>
                 <select name="audience">
-                  <option value="">Please Select...</option>
+                  <option value="" data-i18n="info.pleaseSelect">Please Select...</option>
                   <option>Sales Team</option>
                   <option>Partnership Team</option>
                   <option>Technical Consultant</option>
@@ -41,9 +41,9 @@
               </label>
 
               <label class="info-field">
-                <span>What is your solution of interest?*</span>
+                <span data-i18n="info.fieldSolution">What is your solution of interest?*</span>
                 <select name="solution">
-                  <option value="">Please Select...</option>
+                  <option value="" data-i18n="info.pleaseSelect">Please Select...</option>
                   <option>Wireless Transfer</option>
                   <option>Data Integration</option>
                   <option>Device Support</option>
@@ -52,43 +52,43 @@
 
               <div class="info-two-up">
                 <label class="info-field">
-                  <span>First Name*</span>
+                  <span data-i18n="info.fieldFirstName">First Name*</span>
                   <input type="text" name="first_name" autocomplete="given-name" />
                 </label>
 
                 <label class="info-field">
-                  <span>Last Name*</span>
+                  <span data-i18n="info.fieldLastName">Last Name*</span>
                   <input type="text" name="last_name" autocomplete="family-name" />
                 </label>
               </div>
 
               <label class="info-field">
-                <span>Company Email*</span>
+                <span data-i18n="info.fieldEmail">Company Email*</span>
                 <input type="email" name="company_email" autocomplete="email" />
               </label>
 
               <label class="info-field">
-                <span>Company*</span>
+                <span data-i18n="info.fieldCompany">Company*</span>
                 <input type="text" name="company" autocomplete="organization" />
               </label>
 
               <div class="info-two-up">
                 <label class="info-field">
-                  <span>Job Title*</span>
+                  <span data-i18n="info.fieldJobTitle">Job Title*</span>
                   <input type="text" name="job_title" autocomplete="organization-title" />
                 </label>
 
                 <label class="info-field">
-                  <span>Phone Number*</span>
+                  <span data-i18n="info.fieldPhone">Phone Number*</span>
                   <input type="tel" name="phone" autocomplete="tel" />
                 </label>
               </div>
 
               <div class="info-two-up">
                 <label class="info-field">
-                  <span>Country*</span>
+                  <span data-i18n="info.fieldCountry">Country*</span>
                   <select name="country">
-                    <option value="">Please Select...</option>
+                    <option value="" data-i18n="info.pleaseSelect">Please Select...</option>
                     <option>United Kingdom</option>
                     <option>United States</option>
                     <option>Germany</option>
@@ -97,9 +97,9 @@
                 </label>
 
                 <label class="info-field">
-                  <span>State or Province</span>
+                  <span data-i18n="info.fieldState">State or Province</span>
                   <select name="state">
-                    <option value="">Please Select...</option>
+                    <option value="" data-i18n="info.pleaseSelect">Please Select...</option>
                     <option>Greater London</option>
                     <option>California</option>
                     <option>New York</option>
@@ -109,23 +109,23 @@
               </div>
 
               <label class="info-field">
-                <span>Additional Information</span>
+                <span data-i18n="info.fieldAdditional">Additional Information</span>
                 <textarea name="details" rows="4"></textarea>
               </label>
 
               <label class="info-consent">
                 <input type="checkbox" name="marketing" />
-                <span>Send me Broadcom communications</span>
+                <span data-i18n="info.marketing">Send me Broadcom communications</span>
               </label>
 
-              <p class="info-policy">
+              <p class="info-policy" data-i18n="info.policy">
                 I agree to receive commercial messages from Group-10. I understand
                 my personal data is processed according to Group-10&apos;s Privacy
                 Policy and I may unsubscribe from emailed communications at any
                 time.
               </p>
 
-              <button class="info-submit" type="submit">Submit</button>
+              <button class="info-submit" type="submit" data-i18n="info.submit">Submit</button>
             </form>
           </section>
 
@@ -148,8 +148,8 @@
               <p class="asset-path">
                 Reserved icon path: <code>./assets/info/support-icon.png</code>
               </p>
-              <h3>Contact Support</h3>
-              <p class="support-copy">
+              <h3 data-i18n="info.supportTitle">Contact Support</h3>
+              <p class="support-copy" data-i18n="info.supportDesc">
                 For customer service-related questions or product support, please
                 visit Contact Support.
               </p>
@@ -159,7 +159,7 @@
                 target="_blank"
                 rel="noreferrer"
               >
-                Click Here
+                <span data-i18n="info.supportLink">Click Here</span>
               </a>
             </section>
           </aside>
@@ -168,23 +168,28 @@
     </main>
 
     <nav class="floating-nav" aria-label="Primary navigation">
-      <a class="nav-button" href="./shell.html" data-page-link="home" title="Home">
+      <a class="nav-button" href="./shell.html" data-page-link="home" title="Home" data-i18n-title="nav.home">
         <span class="nav-icon">H</span>
-        <span class="nav-text">Home</span>
+        <span class="nav-text" data-i18n="nav.home">Home</span>
       </a>
       <a
         class="nav-button"
         href="./filetransfer.html"
         data-page-link="filetransfer"
         title="Filetransfer"
+        data-i18n-title="nav.file"
       >
         <span class="nav-icon">F</span>
-        <span class="nav-text">File</span>
+        <span class="nav-text" data-i18n="nav.file">File</span>
       </a>
-      <a class="nav-button" href="./info.html" data-page-link="info" title="Info">
+      <a class="nav-button" href="./info.html" data-page-link="info" title="Info" data-i18n-title="nav.info">
         <span class="nav-icon">I</span>
-        <span class="nav-text">Info</span>
+        <span class="nav-text" data-i18n="nav.info">Info</span>
       </a>
+      <button id="language-toggle" class="nav-button nav-language-button" type="button" title="Switch language">
+        <span id="language-toggle-icon" class="nav-icon">EN</span>
+        <span id="language-toggle-text" class="nav-text">中文</span>
+      </button>
     </nav>
 
     <script src="./shell.js"></script>

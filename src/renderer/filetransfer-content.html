@@ -20,16 +20,16 @@
       <section class="page is-active">
         <header class="transfer-hero surface">
           <div class="hero-copy">
-            <p class="eyebrow">Receiver</p>
-            <h2>Filetransfer Console</h2>
-            <p class="hero-text">
+            <p class="eyebrow" data-i18n="content.receiverEyebrow">Receiver</p>
+            <h2 data-i18n="content.consoleTitle">Filetransfer Console</h2>
+            <p class="hero-text" data-i18n="content.consoleDesc">
               Visual shell for the Python receivers. Switch between the TCP
               stream client and the UDP transfer client, then inspect the live
               execution output below.
             </p>
           </div>
           <div class="hero-endpoint">
-            <span class="endpoint-label">Active Protocol</span>
+            <span class="endpoint-label" data-i18n="content.activeProtocol">Active Protocol</span>
             <strong id="protocol-endpoint">192.168.4.1:27050</strong>
             <span id="protocol-status" class="endpoint-status">TCP Connected Flow</span>
           </div>
@@ -37,16 +37,16 @@
 
         <section class="surface transfer-card launch-card">
           <div class="card-head">
-            <p class="eyebrow">Launcher</p>
-            <h3>Run The Python Receiver</h3>
+            <p class="eyebrow" data-i18n="content.launcherEyebrow">Launcher</p>
+            <h3 data-i18n="content.launcherTitle">Run The Python Receiver</h3>
           </div>
           <div class="launch-row">
             <label class="date-field" for="transfer-date">
-              <span class="field-label">Transfer Date</span>
+              <span class="field-label" data-i18n="content.transferDate">Transfer Date</span>
               <input id="transfer-date" type="date" />
             </label>
             <div class="launch-actions">
-              <button id="start-transfer" class="transfer-button" type="button">
+              <button id="start-transfer" class="transfer-button" type="button" data-i18n="content.startTransfer">
                 Start Transfer
               </button>
               <button id="start-udp-transfer" class="transfer-button transfer-button-udp" type="button">
@@ -54,34 +54,34 @@
               </button>
             </div>
           </div>
-          <p id="transfer-action-status" class="action-status">
+          <p id="transfer-action-status" class="action-status" data-i18n="content.actionStatusDefault">
             Choose a date, then launch the Python receiver.
           </p>
           <p id="transfer-help-note" class="action-help" aria-live="polite"></p>
-          <pre id="transfer-log" class="transfer-log is-collapsed">Waiting for execution...</pre>
+          <pre id="transfer-log" class="transfer-log is-collapsed" data-i18n="content.logWaiting">Waiting for execution...</pre>
         </section>
 
         <section class="transfer-grid is-details-collapsed">
           <section class="surface transfer-card receive-card">
             <div class="card-head">
-              <p class="eyebrow">Receive State</p>
-              <h3>Current File Session</h3>
+              <p class="eyebrow" data-i18n="content.receiveEyebrow">Receive State</p>
+              <h3 data-i18n="content.receiveTitle">Current File Session</h3>
             </div>
             <div class="receive-grid">
               <div class="receive-stat">
-                <span class="stat-caption">Current File</span>
+                <span class="stat-caption" data-i18n="content.statCurrentFile">Current File</span>
                 <strong id="stat-current-file">Waiting</strong>
               </div>
               <div class="receive-stat">
-                <span class="stat-caption">File Size</span>
+                <span class="stat-caption" data-i18n="content.statFileSize">File Size</span>
                 <strong id="stat-file-size">0 B</strong>
               </div>
               <div class="receive-stat">
-                <span class="stat-caption">Write Speed</span>
+                <span class="stat-caption" data-i18n="content.statWriteSpeed">Write Speed</span>
                 <strong id="stat-write-speed">0 B/s</strong>
               </div>
               <div class="receive-stat">
-                <span class="stat-caption">Remaining</span>
+                <span class="stat-caption" data-i18n="content.statRemaining">Remaining</span>
                 <strong id="stat-remaining">0 B</strong>
               </div>
             </div>
@@ -107,24 +107,24 @@
 
           <section class="surface transfer-card summary-card">
             <div class="card-head">
-              <p class="eyebrow">Summary</p>
-              <h3>Overall Transfer</h3>
+              <p class="eyebrow" data-i18n="content.summaryEyebrow">Summary</p>
+              <h3 data-i18n="content.summaryTitle">Overall Transfer</h3>
             </div>
             <div class="summary-stack">
               <div class="summary-row">
-                <span>Total Received</span>
+                <span data-i18n="content.summaryTotalReceived">Total Received</span>
                 <strong id="summary-total-bytes">0 B</strong>
               </div>
               <div class="summary-row">
-                <span>Total Duration</span>
+                <span data-i18n="content.summaryDuration">Total Duration</span>
                 <strong id="summary-total-duration">0.0 s</strong>
               </div>
               <div class="summary-row">
-                <span>Average Rate</span>
+                <span data-i18n="content.summaryRate">Average Rate</span>
                 <strong id="summary-average-rate">0 B/s</strong>
               </div>
               <div class="summary-row">
-                <span>Files / Retries</span>
+                <span data-i18n="content.summaryExtra">Files / Retries</span>
                 <strong id="summary-extra">0 / 0</strong>
               </div>
             </div>
@@ -133,24 +133,24 @@
           <section class="transfer-stack-column">
             <section class="surface transfer-card metrics-card">
               <div class="card-head">
-                <p class="eyebrow">Runtime</p>
-                <h3>Transfer Parameters</h3>
+                <p class="eyebrow" data-i18n="content.runtimeEyebrow">Runtime</p>
+                <h3 data-i18n="content.runtimeTitle">Transfer Parameters</h3>
               </div>
               <div class="metric-grid">
                 <article class="metric-tile">
-                  <span class="metric-label">Transport</span>
+                  <span class="metric-label" data-i18n="content.metricTransport">Transport</span>
                   <strong id="metric-transport">TCP</strong>
                 </article>
                 <article class="metric-tile">
-                  <span class="metric-label">Socket Read</span>
+                  <span class="metric-label" data-i18n="content.metricRead">Socket Read</span>
                   <strong id="metric-read">8192 B</strong>
                 </article>
                 <article class="metric-tile">
-                  <span class="metric-label">Payload Block</span>
+                  <span class="metric-label" data-i18n="content.metricBlock">Payload Block</span>
                   <strong id="metric-block">32768 B</strong>
                 </article>
                 <article class="metric-tile">
-                  <span class="metric-label">Completion</span>
+                  <span class="metric-label" data-i18n="content.metricCompletion">Completion</span>
                   <strong id="metric-finish">0x21</strong>
                 </article>
               </div>
@@ -158,7 +158,7 @@
 
             <section class="surface transfer-card queue-card">
               <div class="card-head">
-                <p class="eyebrow">Date Queue</p>
+                <p class="eyebrow" data-i18n="content.queueEyebrow">Date Queue</p>
                 <h3 id="queue-title">Request Pattern</h3>
               </div>
               <div class="queue-strip">
@@ -167,7 +167,7 @@
                 <span class="queue-chip">20260303</span>
               </div>
               <div class="folder-preview">
-                <span class="folder-label">Output Folder Rule</span>
+                <span class="folder-label" data-i18n="content.folderRule">Output Folder Rule</span>
                 <strong id="folder-rule">REYYYYMMDD</strong>
                 <p id="folder-copy">Each input date maps to a dedicated receive directory.</p>
               </div>
@@ -176,7 +176,7 @@
 
           <section class="surface transfer-card command-card">
             <div class="card-head">
-              <p class="eyebrow">Protocol</p>
+              <p class="eyebrow" data-i18n="content.protocolEyebrow">Protocol</p>
               <h3 id="protocol-title">Command Stream</h3>
             </div>
             <div id="protocol-commands" class="command-list"></div>
@@ -185,10 +185,10 @@
 
         <section class="surface transfer-card received-browser-card">
           <div class="card-head">
-            <p class="eyebrow">Received Files</p>
-            <h3>Browse By Date</h3>
+            <p class="eyebrow" data-i18n="content.receivedEyebrow">Received Files</p>
+            <h3 data-i18n="content.receivedTitle">Browse By Date</h3>
           </div>
-          <p class="received-copy">
+          <p class="received-copy" data-i18n="content.receivedDesc">
             Files are grouped by transfer date. Select a folder to inspect the
             received file list directly in the app.
           </p>
@@ -210,18 +210,21 @@
             type="button"
             tabindex="-1"
             aria-label="Close received folder viewer"
+            data-i18n-aria-label="content.closeViewer"
           ></button>
           <section class="received-modal-panel">
             <div class="received-modal-head">
               <div class="card-head">
-                <p class="eyebrow">Received Folder</p>
-                <h3 id="received-folder-title">Folder Contents</h3>
+                <p class="eyebrow" data-i18n="content.folderEyebrow">Received Folder</p>
+                <h3 id="received-folder-title" data-i18n="content.folderContents">Folder Contents</h3>
               </div>
               <button
                 id="received-folder-close"
                 class="received-modal-close"
                 type="button"
                 aria-label="Close received folder viewer"
+                data-i18n-aria-label="content.closeViewer"
+                data-i18n="content.close"
               >
                 Close
               </button>
@@ -241,23 +244,28 @@
     </main>
 
     <nav class="floating-nav" aria-label="Primary navigation">
-      <a class="nav-button" href="./shell.html" data-page-link="home" title="Home">
+      <a class="nav-button" href="./shell.html" data-page-link="home" title="Home" data-i18n-title="nav.home">
         <span class="nav-icon">H</span>
-        <span class="nav-text">Home</span>
+        <span class="nav-text" data-i18n="nav.home">Home</span>
       </a>
       <a
         class="nav-button"
         href="./filetransfer-content.html"
         data-page-link="filetransfer"
         title="Filetransfer"
+        data-i18n-title="nav.file"
       >
         <span class="nav-icon">F</span>
-        <span class="nav-text">File</span>
+        <span class="nav-text" data-i18n="nav.file">File</span>
       </a>
-      <a class="nav-button" href="./info.html" data-page-link="info" title="Info">
+      <a class="nav-button" href="./info.html" data-page-link="info" title="Info" data-i18n-title="nav.info">
         <span class="nav-icon">I</span>
-        <span class="nav-text">Info</span>
+        <span class="nav-text" data-i18n="nav.info">Info</span>
       </a>
+      <button id="language-toggle" class="nav-button nav-language-button" type="button" title="Switch language">
+        <span id="language-toggle-icon" class="nav-icon">EN</span>
+        <span id="language-toggle-text" class="nav-text">中文</span>
+      </button>
     </nav>
 
     <script src="./shell.js"></script>

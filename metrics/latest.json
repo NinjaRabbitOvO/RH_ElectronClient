@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-16T03:14:47.744Z",
-  "headCommit": "ea532d34cb3d52b37d2bd0c3e311917b3b7b395b",
+  "timestamp": "2026-03-16T03:36:58.793Z",
+  "headCommit": "e483d120b5bdd123a3ca1d1dd2a7d287df20f48e",
   "baselines": {
     "projectBaselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
     "trackingStartCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
@@ -8,32 +8,32 @@
   },
   "projectTotals": {
     "baselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
-    "changedFiles": 25,
-    "writtenLines": 6972,
-    "deletedLines": 73,
-    "changeLines": 7045,
-    "totalCommitCount": 45,
+    "changedFiles": 30,
+    "writtenLines": 7784,
+    "deletedLines": 300,
+    "changeLines": 8084,
+    "totalCommitCount": 46,
     "featureCommitCount": 25,
-    "adjustmentCommitCount": 16
+    "adjustmentCommitCount": 17
   },
   "trackingTotals": {
     "baselineCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
-    "changedFiles": 17,
-    "writtenLines": 4173,
-    "deletedLines": 226,
-    "changeLines": 4399,
-    "totalCommitCount": 26,
+    "changedFiles": 22,
+    "writtenLines": 4985,
+    "deletedLines": 453,
+    "changeLines": 5438,
+    "totalCommitCount": 27,
     "featureCommitCount": 15,
-    "adjustmentCommitCount": 9
+    "adjustmentCommitCount": 10
   },
   "currentTotals": {
-    "totalLines": 7014,
+    "totalLines": 7599,
     "sourceFileCount": 20
   },
   "majorSourceFiles": [
     {
       "file": "src/renderer/shell.js",
-      "lines": 1884
+      "lines": 2438
     },
     {
       "file": "src/renderer/filetransfer-content.css",
@@ -53,7 +53,7 @@
     },
     {
       "file": "src/renderer/shell.css",
-      "lines": 501
+      "lines": 506
     },
     {
       "file": "tools/code-metrics.js",
@@ -65,7 +65,7 @@
     },
     {
       "file": "src/renderer/filetransfer-content.html",
-      "lines": 265
+      "lines": 273
     },
     {
       "file": "src/renderer/info.css",
@@ -115,11 +115,11 @@
     },
     {
       "file": "src/renderer/filetransfer-content.html",
-      "lines": 265
+      "lines": 273
     },
     {
       "file": "src/renderer/filetransfer.html",
-      "lines": 111
+      "lines": 119
     },
     {
       "file": "src/renderer/info.css",
@@ -127,19 +127,19 @@
     },
     {
       "file": "src/renderer/info.html",
-      "lines": 192
+      "lines": 197
     },
     {
       "file": "src/renderer/shell.css",
-      "lines": 501
+      "lines": 506
     },
     {
       "file": "src/renderer/shell.html",
-      "lines": 75
+      "lines": 80
     },
     {
       "file": "src/renderer/shell.js",
-      "lines": 1884
+      "lines": 2438
     },
     {
       "file": "src/shared/ipc.js",

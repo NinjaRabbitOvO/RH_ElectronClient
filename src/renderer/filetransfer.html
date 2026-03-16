@@ -19,19 +19,20 @@
       <section class="page is-active">
         <section class="surface preflight-card">
           <div class="preflight-main">
-            <p class="eyebrow">Ready Check</p>
-            <h2>Filetransfer</h2>
+            <p class="eyebrow" data-i18n="preflight.eyebrow">Ready Check</p>
+            <h2 data-i18n="preflight.title">Filetransfer</h2>
             <p class="preflight-copy">
-              <span class="preflight-copy-line">&#x5728;&#x5F00;&#x59CB;&#x6587;&#x4EF6;&#x4F20;&#x8F93;&#x4E4B;&#x524D;&#xFF0C;</span>
-              <span class="preflight-copy-line">&#x8BF7;&#x786E;&#x4FDD;&#x901A;&#x8FC7; WiFi &#x8FDE;&#x63A5;&#x5230;&#x9644;&#x8FD1;&#x8BBE;&#x5907;&#x3002;</span>
+              <span class="preflight-copy-line" data-i18n="preflight.line1">Before starting file transfer,</span>
+              <span class="preflight-copy-line" data-i18n="preflight.line2">please ensure you are connected to a nearby device via Wi-Fi.</span>
             </p>
             <a
               id="ready-confirm-button"
               class="confirm-button is-disabled"
               href="./filetransfer-content.html"
               aria-disabled="true"
+              data-i18n="preflight.confirm"
             >
-              &#x786E;&#x8BA4;
+              Confirm
             </a>
           </div>
 
@@ -56,29 +57,31 @@
             </div>
 
             <form id="wifi-connect-form" class="wifi-connect-form" hidden>
-              <label class="wifi-connect-label" for="wifi-password-input">Wi-Fi Password</label>
+              <label class="wifi-connect-label" for="wifi-password-input" data-i18n="preflight.passwordLabel">Wi-Fi Password</label>
               <input
                 id="wifi-password-input"
                 class="wifi-connect-input"
                 type="password"
                 autocomplete="current-password"
                 placeholder="Enter password (or leave blank for saved profile)"
+                data-i18n-placeholder="preflight.passwordPlaceholder"
               />
               <div class="wifi-connect-actions">
-                <button id="wifi-connect-submit" class="wifi-connect-submit" type="submit">
+                <button id="wifi-connect-submit" class="wifi-connect-submit" type="submit" data-i18n="preflight.connect">
                   Connect
                 </button>
                 <button
                   id="wifi-connect-saved"
                   class="wifi-connect-saved"
                   type="button"
+                  data-i18n="preflight.useSaved"
                 >
                   Use Saved
                 </button>
               </div>
             </form>
 
-            <p id="wifi-ready-status" class="wifi-ready-status">
+            <p id="wifi-ready-status" class="wifi-ready-status" data-i18n="preflight.scanningStatus">
               Scanning for nearby ESP-* networks...
             </p>
           </aside>
@@ -87,23 +90,28 @@
     </main>
 
     <nav class="floating-nav" aria-label="Primary navigation">
-      <a class="nav-button" href="./shell.html" data-page-link="home" title="Home">
+      <a class="nav-button" href="./shell.html" data-page-link="home" title="Home" data-i18n-title="nav.home">
         <span class="nav-icon">H</span>
-        <span class="nav-text">Home</span>
+        <span class="nav-text" data-i18n="nav.home">Home</span>
       </a>
       <a
         class="nav-button"
         href="./filetransfer.html"
         data-page-link="filetransfer"
         title="Filetransfer"
+        data-i18n-title="nav.file"
       >
         <span class="nav-icon">F</span>
-        <span class="nav-text">File</span>
+        <span class="nav-text" data-i18n="nav.file">File</span>
       </a>
-      <a class="nav-button" href="./info.html" data-page-link="info" title="Info">
+      <a class="nav-button" href="./info.html" data-page-link="info" title="Info" data-i18n-title="nav.info">
         <span class="nav-icon">I</span>
-        <span class="nav-text">Info</span>
+        <span class="nav-text" data-i18n="nav.info">Info</span>
       </a>
+      <button id="language-toggle" class="nav-button nav-language-button" type="button" title="Switch language">
+        <span id="language-toggle-icon" class="nav-icon">EN</span>
+        <span id="language-toggle-text" class="nav-text">中文</span>
+      </button>
     </nav>
 
     <script src="./shell.js"></script>

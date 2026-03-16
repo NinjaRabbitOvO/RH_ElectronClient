@@ -1,5 +1,5 @@
 const homeWebview = document.getElementById("home-webview");
-const navButtons = Array.from(document.querySelectorAll(".nav-button"));
+const navButtons = Array.from(document.querySelectorAll(".nav-button[data-page-link]"));
 const transferDateInput = document.getElementById("transfer-date");
 const transferButton = document.getElementById("start-transfer");
 const udpTransferButton = document.getElementById("start-udp-transfer");
@@ -33,6 +33,9 @@ const receivedFolderTitle = document.getElementById("received-folder-title");
 const receivedFolderSummary = document.getElementById("received-folder-summary");
 const receivedFolderList = document.getElementById("received-folder-list");
 const receivedFileViewer = document.getElementById("received-file-viewer");
+const languageToggleButton = document.getElementById("language-toggle");
+const languageToggleIcon = document.getElementById("language-toggle-icon");
+const languageToggleText = document.getElementById("language-toggle-text");
 const wifiReadyButton = document.getElementById("wifi-ready-button");
 const wifiReadyList = document.getElementById("wifi-ready-list");
 const wifiReadyLabel = document.getElementById("wifi-ready-label");
@@ -47,60 +50,466 @@ const filetransferApi =
   window.appApi && window.appApi.filetransfer ? window.appApi.filetransfer : null;
 const ACTIVE_WIFI_STORAGE_KEY = "rh_active_wifi_name";
 const DEFAULT_TRANSFER_WIFI_NAME = "ESP32-S3";
+const LANGUAGE_STORAGE_KEY = "rh_ui_language";
+const DEFAULT_LANGUAGE = "en";
+const SUPPORTED_LANGUAGES = ["en", "zh"];
+
+const I18N = {
+  en: {
+    nav: {
+      home: "Home",
+      file: "File",
+      info: "Info",
+      languageTitle: "Switch language",
+      languageIcon: "EN",
+      languageNext: "中文",
+    },
+    shell: {
+      pageEyebrow: "Page",
+      pageFile: "Filetransfer",
+      pageInfo: "Info",
+      placeholderFile: "filetransfer",
+      placeholderInfo: "info",
+    },
+    preflight: {
+      eyebrow: "Ready Check",
+      title: "Filetransfer",
+      line1: "Before starting file transfer,",
+      line2: "please ensure you are connected to a nearby device via Wi-Fi.",
+      confirm: "Confirm",
+      passwordLabel: "Wi-Fi Password",
+      passwordPlaceholder: "Enter password (or leave blank for saved profile)",
+      connect: "Connect",
+      useSaved: "Use Saved",
+      scanningStatus: "Scanning for nearby ESP-* networks...",
+    },
+    content: {
+      receiverEyebrow: "Receiver",
+      consoleTitle: "Filetransfer Console",
+      consoleDesc:
+        "Visual shell for the Python receivers. Switch between the TCP stream client and the UDP transfer client, then inspect the live execution output below.",
+      activeProtocol: "Active Protocol",
+      launcherEyebrow: "Launcher",
+      launcherTitle: "Run The Python Receiver",
+      transferDate: "Transfer Date",
+      startTransfer: "Start Transfer",
+      actionStatusDefault: "Choose a date, then launch the Python receiver.",
+      logWaiting: "Waiting for execution...",
+      receiveEyebrow: "Receive State",
+      receiveTitle: "Current File Session",
+      statCurrentFile: "Current File",
+      statFileSize: "File Size",
+      statWriteSpeed: "Write Speed",
+      statRemaining: "Remaining",
+      summaryEyebrow: "Summary",
+      summaryTitle: "Overall Transfer",
+      summaryTotalReceived: "Total Received",
+      summaryDuration: "Total Duration",
+      summaryRate: "Average Rate",
+      summaryExtra: "Files / Retries",
+      runtimeEyebrow: "Runtime",
+      runtimeTitle: "Transfer Parameters",
+      metricTransport: "Transport",
+      metricRead: "Socket Read",
+      metricBlock: "Payload Block",
+      metricCompletion: "Completion",
+      queueEyebrow: "Date Queue",
+      folderRule: "Output Folder Rule",
+      protocolEyebrow: "Protocol",
+      receivedEyebrow: "Received Files",
+      receivedTitle: "Browse By Date",
+      receivedDesc:
+        "Files are grouped by transfer date. Select a folder to inspect the received file list directly in the app.",
+      closeViewer: "Close received folder viewer",
+      folderEyebrow: "Received Folder",
+      folderContents: "Folder Contents",
+      close: "Close",
+    },
+    info: {
+      eyebrow: "Contact",
+      title: "Talk To Our Team",
+      desc: "Complete the form below to have a member of our sales team address your business needs.",
+      fieldAudience: "Who would you like to talk to?*",
+      fieldSolution: "What is your solution of interest?*",
+      fieldFirstName: "First Name*",
+      fieldLastName: "Last Name*",
+      fieldEmail: "Company Email*",
+      fieldCompany: "Company*",
+      fieldJobTitle: "Job Title*",
+      fieldPhone: "Phone Number*",
+      fieldCountry: "Country*",
+      fieldState: "State or Province",
+      fieldAdditional: "Additional Information",
+      marketing: "Send me Broadcom communications",
+      policy:
+        "I agree to receive commercial messages from Group-10. I understand my personal data is processed according to Group-10's Privacy Policy and I may unsubscribe from emailed communications at any time.",
+      submit: "Submit",
+      supportTitle: "Contact Support",
+      supportDesc:
+        "For customer service-related questions or product support, please visit Contact Support.",
+      supportLink: "Click Here",
+      pleaseSelect: "Please Select...",
+    },
+    transfer: {
+      failureNote:
+        "Please verify that you are connected to a nearby device via Wi-Fi, then restart the transfer.",
+      chooseDateFirst: "Please choose a valid transfer date first.",
+      launchFailed: "Transfer launch failed before the receiver started.",
+      noRealtimeEvents: "Realtime transfer events are unavailable until the app is restarted.",
+      apiUnavailable: "Transfer API is unavailable. Restart the app to reload preload scripts.",
+      rendererApiError: "Renderer could not access window.appApi.filetransfer.",
+      launchFailedFallback: "Failed to launch transfer.",
+      processExited: "Process exited with code {{code}}{{signal}}.",
+      selectedDate: "Selected date: {{date}}",
+      receivedDateRule: "Each input date maps to a dedicated receive directory.",
+      receivedUdpRule:
+        "The UDP client stores files in a <Wi-Fi>_ReYYYYMMDD directory and appends .dat files.",
+      datViewerSelect: "Select a .dat file to view parsed content.",
+      datViewerReading: "Reading and parsing file...",
+      datApiUnavailable: "Dat parser API is unavailable until the app is restarted.",
+      datParseFailed: "Unable to parse selected .dat file.",
+      datParserNoResponse: "Dat parser failed to respond.",
+      datBrowserUnavailable: "Received-file browser is unavailable until the app is restarted.",
+      datBrowserLoadFailed: "Unable to load received files right now.",
+      datFolderEmpty: "No .dat files in this folder.",
+      datFolderCardEmpty: "This folder is empty right now.",
+      openReceivedFor: "Open received files for {{date}}",
+      showcaseFolder: "Showcase Folder",
+      protocolFolder: "{{protocol}} Folder",
+      filesSummary: "{{count}} files | {{size}}",
+      noReceivedFiles: "No received files yet. Completed transfers will appear here by date.",
+      exampleDataTitle: "Example Data",
+      exampleDataDesc: "Showcase dataset bundled with the app for preview and demonstration.",
+      wifiTransfersTitle: "{{wifi}} Received Transfers",
+      wifiTransfersDesc: "Files captured from device transfers, grouped by date.",
+      noActualFolders: "No actual receive folders yet. Start a transfer to populate this section.",
+      datNotFf: "Separator is not 0xFF, no XYZ sample arrays in this file.",
+      noHighAlerts: "No high-value alerts.",
+      highAlertsTop: "Top {{count}} high-value alerts:",
+      threshold: "threshold",
+      pointsShort: "pts",
+      minimumShort: "min",
+      maximumShort: "max",
+      axisSuffix: "Axis",
+      chartSuffix: "Data Chart",
+      sensors: "Sensors",
+      sampling: "Sampling",
+      sampleSize: "Sample Size",
+      startTimestamp: "Start Timestamp",
+      sampleSize2: "Sample Size2",
+      trailingBytes: "Trailing Bytes",
+      count: "Count",
+      mean: "Mean",
+      median: "Median",
+      std: "Std",
+      thresholdLabel: "Threshold",
+      highAlerts: "High Alerts",
+      currentFileUnknown: "Unknown",
+      currentFileWaiting: "Waiting",
+      currentFileDone: "Done",
+      wifiNeedConnectFirst:
+        "Please connect to a nearby ESP Wi-Fi successfully before confirming.",
+    },
+    wifi: {
+      scanning: "Scanning Wi-Fi...",
+      scanningNearby: "Scanning for nearby ESP-* networks...",
+      scanButton: "Scan Wi-Fi",
+      networkPending:
+        "{{ssid}} detected. Click this card to connect using password or saved profile.",
+      apiUnavailable: "Renderer could not access Wi-Fi API. Please restart the app.",
+      scanFailed: "Unable to scan Wi-Fi networks.",
+      usingLastKnown: "Using last detected {{ssid}}. Scan warning: {{error}}",
+      adapterEnabledPrefix: "Wi-Fi adapter enabled. ",
+      detectedMultiple: "Detected {{count}} ESP networks. Click one of the green cards to continue.",
+      detectedSingle: "Detected {{ssid}}. Click this card to connect.",
+      noEspFound: "No ESP-* network found yet. Keep the device nearby and wait for refresh.",
+      noEspKeepLast: "No ESP network in this scan. Keeping last detected {{ssid}}.",
+      scanExceptionKeep: "Scan exception; keeping {{ssid}}. {{error}}",
+      noEspDetected: "Please wait until an ESP-* network is detected.",
+      connectApiUnavailable: "Wi-Fi connect API is unavailable. Restart the app and try again.",
+      connectingSaved: "Trying saved profile for {{ssid}}...",
+      connectingPassword: "Trying to connect to {{ssid}}...",
+      connected: "Connected to {{ssid}}.",
+      connectFailedSaved:
+        "Saved profile failed for {{ssid}}. You can enter password and try again.",
+      connectFailedWithError:
+        "{{message}} Please verify password and device proximity, then retry.",
+      connectFailed:
+        "Connection failed. Please verify password and signal, then try again.",
+    },
+    mode: {
+      tcp: {
+        status: "TCP Connected Flow",
+        title: "TCP Command Stream",
+        queueTitle: "Request Pattern",
+        pendingText: "Choose a date, then launch the Python TCP receiver.",
+        runningText: "Running Python TCP receiver...",
+        successText: "TCP transfer completed successfully.",
+        failText: "TCP transfer failed. Review the error output below.",
+        launchLabel: "Launching TCP transfer job...",
+        commands: [
+          ["0x11", "Request DK", "Initial handshake before the first date batch starts."],
+          ["0x12", "Receive DK", "Reads a fixed 32-byte key block from the server."],
+          ["0x02", "Files Count", "Receives the total file count for the selected date."],
+          ["0x03", "File Payload", "Reads file name, size, then writes the stream in chunks."],
+          ["0x04", "End Of Files", "Marks the end of the current date batch."],
+        ],
+      },
+      udp: {
+        status: "UDP Packet Flow",
+        title: "UDP Packet Sequence",
+        queueTitle: "Batch Discovery",
+        pendingText: "Choose a date, then launch the Python UDP receiver.",
+        runningText: "Running Python UDP receiver...",
+        successText: "UDP transfer completed successfully.",
+        failText: "UDP transfer failed. Review the error output below.",
+        launchLabel: "Launching UDP transfer job...",
+        commands: [
+          ["0x01", "HELLO", "Starts a session and waits for HELLO_RSP."],
+          ["0x20", "LIST FILES", "Enumerates files for the selected date and optional since cursor."],
+          ["0x30", "GET FILE", "Requests a file and negotiates block size."],
+          ["0x32", "DATA", "Streams payload packets with sequence and offset fields."],
+          ["0x33", "ACK", "Acknowledges each accepted packet back to the server."],
+          ["0x34", "FILE END", "Finalizes a file and validates CRC when present."],
+        ],
+      },
+    },
+  },
+  zh: {
+    nav: {
+      home: "首页",
+      file: "文件",
+      info: "信息",
+      languageTitle: "切换语言",
+      languageIcon: "中",
+      languageNext: "EN",
+    },
+    shell: {
+      pageEyebrow: "页面",
+      pageFile: "文件传输",
+      pageInfo: "信息",
+      placeholderFile: "文件传输",
+      placeholderInfo: "信息",
+    },
+    preflight: {
+      eyebrow: "准备检查",
+      title: "文件传输",
+      line1: "在开始文件传输之前，",
+      line2: "请确保通过 Wi-Fi 连接到附近设备。",
+      confirm: "确认",
+      passwordLabel: "Wi-Fi 密码",
+      passwordPlaceholder: "输入密码（或留空使用已保存配置）",
+      connect: "连接",
+      useSaved: "使用已保存",
+      scanningStatus: "正在扫描附近 ESP-* 网络...",
+    },
+    content: {
+      receiverEyebrow: "接收端",
+      consoleTitle: "文件传输控制台",
+      consoleDesc:
+        "这是 Python 接收端的可视化界面。你可以在 TCP 流式客户端和 UDP 传输客户端之间切换，并在下方查看实时执行输出。",
+      activeProtocol: "当前协议",
+      launcherEyebrow: "启动器",
+      launcherTitle: "运行 Python 接收器",
+      transferDate: "传输日期",
+      startTransfer: "开始传输",
+      actionStatusDefault: "选择日期后启动 Python 接收器。",
+      logWaiting: "等待执行...",
+      receiveEyebrow: "接收状态",
+      receiveTitle: "当前文件会话",
+      statCurrentFile: "当前文件",
+      statFileSize: "文件大小",
+      statWriteSpeed: "写入速度",
+      statRemaining: "剩余",
+      summaryEyebrow: "摘要",
+      summaryTitle: "整体传输",
+      summaryTotalReceived: "总接收量",
+      summaryDuration: "总耗时",
+      summaryRate: "平均速率",
+      summaryExtra: "文件数 / 重试",
+      runtimeEyebrow: "运行时",
+      runtimeTitle: "传输参数",
+      metricTransport: "传输方式",
+      metricRead: "Socket 读取",
+      metricBlock: "载荷块",
+      metricCompletion: "完成码",
+      queueEyebrow: "日期队列",
+      folderRule: "输出目录规则",
+      protocolEyebrow: "协议",
+      receivedEyebrow: "接收文件",
+      receivedTitle: "按日期浏览",
+      receivedDesc: "文件按传输日期分组。选择文件夹可直接在应用内查看接收文件列表。",
+      closeViewer: "关闭接收目录查看器",
+      folderEyebrow: "接收目录",
+      folderContents: "目录内容",
+      close: "关闭",
+    },
+    info: {
+      eyebrow: "联系",
+      title: "联系团队",
+      desc: "请填写下方表单，我们的销售团队成员将针对你的业务需求与你联系。",
+      fieldAudience: "你想联系谁？*",
+      fieldSolution: "你关注的解决方案是？*",
+      fieldFirstName: "名*",
+      fieldLastName: "姓*",
+      fieldEmail: "公司邮箱*",
+      fieldCompany: "公司*",
+      fieldJobTitle: "职位*",
+      fieldPhone: "电话*",
+      fieldCountry: "国家*",
+      fieldState: "州或省",
+      fieldAdditional: "补充信息",
+      marketing: "向我发送 Broadcom 通信信息",
+      policy:
+        "我同意接收来自 Group-10 的商业信息。我理解我的个人数据将根据 Group-10 的隐私政策进行处理，并且我可随时取消邮件订阅。",
+      submit: "提交",
+      supportTitle: "联系支持",
+      supportDesc: "如有客户服务或产品支持相关问题，请访问 Contact Support。",
+      supportLink: "点击这里",
+      pleaseSelect: "请选择...",
+    },
+    transfer: {
+      failureNote: "请确认你已通过 Wi-Fi 连接到附近设备，然后重新开始传输。",
+      chooseDateFirst: "请先选择有效的传输日期。",
+      launchFailed: "接收器启动前发生错误，传输未开始。",
+      noRealtimeEvents: "实时传输事件不可用，请重启应用后重试。",
+      apiUnavailable: "传输 API 不可用，请重启应用以重新加载 preload 脚本。",
+      rendererApiError: "渲染进程无法访问 window.appApi.filetransfer。",
+      launchFailedFallback: "启动传输失败。",
+      processExited: "进程已退出，退出码 {{code}}{{signal}}。",
+      selectedDate: "所选日期：{{date}}",
+      receivedDateRule: "每个输入日期都会映射到独立的接收目录。",
+      receivedUdpRule: "UDP 客户端会将文件保存到 <Wi-Fi>_ReYYYYMMDD 目录，并追加 .dat 后缀。",
+      datViewerSelect: "请选择一个 .dat 文件查看解析结果。",
+      datViewerReading: "正在读取并解析文件...",
+      datApiUnavailable: "Dat 解析 API 不可用，请重启应用后重试。",
+      datParseFailed: "无法解析所选 .dat 文件。",
+      datParserNoResponse: "Dat 解析器无响应。",
+      datBrowserUnavailable: "接收文件浏览器不可用，请重启应用后重试。",
+      datBrowserLoadFailed: "当前无法加载接收文件。",
+      datFolderEmpty: "此目录中暂无 .dat 文件。",
+      datFolderCardEmpty: "该目录当前为空。",
+      openReceivedFor: "打开 {{date}} 的接收文件",
+      showcaseFolder: "示例目录",
+      protocolFolder: "{{protocol}} 目录",
+      filesSummary: "{{count}} 个文件 | {{size}}",
+      noReceivedFiles: "暂无接收文件。完成传输后会按日期显示在这里。",
+      exampleDataTitle: "示例数据",
+      exampleDataDesc: "应用内置的展示数据集，用于预览和演示。",
+      wifiTransfersTitle: "{{wifi}} 接收记录",
+      wifiTransfersDesc: "按日期分组展示设备传输得到的文件。",
+      noActualFolders: "尚无真实接收目录，请先执行一次传输。",
+      datNotFf: "分隔符不是 0xFF，此文件不包含 XYZ 采样数组。",
+      noHighAlerts: "未检测到高值告警。",
+      highAlertsTop: "高值告警前 {{count}} 项：",
+      threshold: "阈值",
+      pointsShort: "点",
+      minimumShort: "最小",
+      maximumShort: "最大",
+      axisSuffix: "轴",
+      chartSuffix: "数据图",
+      sensors: "传感器",
+      sampling: "采样",
+      sampleSize: "样本数量",
+      startTimestamp: "起始时间戳",
+      sampleSize2: "样本数量2",
+      trailingBytes: "尾部字节",
+      count: "计数",
+      mean: "平均值",
+      median: "中位数",
+      std: "标准差",
+      thresholdLabel: "阈值",
+      highAlerts: "高值告警",
+      currentFileUnknown: "未知",
+      currentFileWaiting: "等待中",
+      currentFileDone: "完成",
+      wifiNeedConnectFirst: "请先成功连接到附近 ESP Wi-Fi，再点击确认。",
+    },
+    wifi: {
+      scanning: "正在扫描 Wi-Fi...",
+      scanningNearby: "正在扫描附近 ESP-* 网络...",
+      scanButton: "扫描 Wi-Fi",
+      networkPending: "已发现 {{ssid}}。点击此卡片后可输入密码或使用已保存配置连接。",
+      apiUnavailable: "渲染进程无法访问 Wi-Fi API，请重启应用。",
+      scanFailed: "扫描 Wi-Fi 网络失败。",
+      usingLastKnown: "使用上一次检测到的 {{ssid}}。扫描告警：{{error}}",
+      adapterEnabledPrefix: "Wi-Fi 适配器已启用。 ",
+      detectedMultiple: "检测到 {{count}} 个 ESP 网络。请点击绿色卡片继续。",
+      detectedSingle: "已检测到 {{ssid}}。点击卡片即可连接。",
+      noEspFound: "尚未发现 ESP-* 网络，请将设备放近后等待刷新。",
+      noEspKeepLast: "本次扫描未发现 ESP 网络，继续保留上次检测到的 {{ssid}}。",
+      scanExceptionKeep: "扫描异常，继续保留 {{ssid}}。{{error}}",
+      noEspDetected: "请等待检测到 ESP-* 网络后再操作。",
+      connectApiUnavailable: "Wi-Fi 连接 API 不可用，请重启应用后重试。",
+      connectingSaved: "正在尝试使用已保存配置连接 {{ssid}}...",
+      connectingPassword: "正在尝试连接 {{ssid}}...",
+      connected: "已连接到 {{ssid}}。",
+      connectFailedSaved: "{{ssid}} 的已保存配置连接失败，可输入密码重试。",
+      connectFailedWithError: "{{message}} 请检查密码与设备距离后重试。",
+      connectFailed: "连接失败，请检查密码和信号后重试。",
+    },
+    mode: {
+      tcp: {
+        status: "TCP 已连接流程",
+        title: "TCP 命令流",
+        queueTitle: "请求序列",
+        pendingText: "请选择日期，然后启动 Python TCP 接收器。",
+        runningText: "正在运行 Python TCP 接收器...",
+        successText: "TCP 传输完成。",
+        failText: "TCP 传输失败。请查看下方错误输出。",
+        launchLabel: "正在启动 TCP 传输任务...",
+        commands: [
+          ["0x11", "请求 DK", "首个日期批次前的初始化握手。"],
+          ["0x12", "接收 DK", "从服务端读取固定 32 字节密钥块。"],
+          ["0x02", "文件数量", "接收所选日期的文件总数。"],
+          ["0x03", "文件载荷", "读取文件名和大小，并按块写入数据流。"],
+          ["0x04", "文件结束", "标记当前日期批次结束。"],
+        ],
+      },
+      udp: {
+        status: "UDP 数据包流程",
+        title: "UDP 包序列",
+        queueTitle: "批次发现",
+        pendingText: "请选择日期，然后启动 Python UDP 接收器。",
+        runningText: "正在运行 Python UDP 接收器...",
+        successText: "UDP 传输完成。",
+        failText: "UDP 传输失败。请查看下方错误输出。",
+        launchLabel: "正在启动 UDP 传输任务...",
+        commands: [
+          ["0x01", "HELLO", "开启会话并等待 HELLO_RSP。"],
+          ["0x20", "列文件", "按日期及可选 since 游标枚举文件。"],
+          ["0x30", "取文件", "请求文件并协商块大小。"],
+          ["0x32", "数据", "按序列号与偏移字段传输数据包。"],
+          ["0x33", "确认", "对每个接收包回传 ACK。"],
+          ["0x34", "文件结束", "结束单个文件并在可用时校验 CRC。"],
+        ],
+      },
+    },
+  },
+};
+
+let currentLanguage = getPersistedLanguage();
 
 const TRANSFER_MODES = {
   tcp: {
     endpoint: "192.168.4.1:27050",
-    status: "TCP Connected Flow",
-    title: "TCP Command Stream",
-    queueTitle: "Request Pattern",
-    folderRule: "REYYYYMMDD",
-    folderCopy: "Each input date maps to a dedicated receive directory.",
+    folderRule: "<Wi-Fi>_REYYYYMMDD",
     metrics: {
       transport: "TCP",
       read: "8192 B",
       block: "32768 B",
       finish: "0x21",
     },
-    commands: [
-      ["0x11", "Request DK", "Initial handshake before the first date batch starts."],
-      ["0x12", "Receive DK", "Reads a fixed 32-byte key block from the server."],
-      ["0x02", "Files Count", "Receives the total file count for the selected date."],
-      ["0x03", "File Payload", "Reads file name, size, then writes the stream in chunks."],
-      ["0x04", "End Of Files", "Marks the end of the current date batch."],
-    ],
-    pendingText: "Choose a date, then launch the Python TCP receiver.",
-    runningText: "Running Python TCP receiver...",
-    successText: "TCP transfer completed successfully.",
-    failText: "TCP transfer failed. Review the error output below.",
-    launchLabel: "Launching TCP transfer job...",
   },
   udp: {
     endpoint: "192.168.4.1:6000",
-    status: "UDP Packet Flow",
-    title: "UDP Packet Sequence",
-    queueTitle: "Batch Discovery",
-    folderRule: "ReYYYYMMDD",
-    folderCopy: "The UDP client stores files in a ReYYYYMMDD directory and appends .dat files.",
+    folderRule: "<Wi-Fi>_ReYYYYMMDD",
     metrics: {
       transport: "UDP",
       read: "4096 B",
       block: "1450 B",
       finish: "MSG_FILE_END",
     },
-    commands: [
-      ["0x01", "HELLO", "Starts a session and waits for HELLO_RSP."],
-      ["0x20", "LIST FILES", "Enumerates files for the selected date and optional since cursor."],
-      ["0x30", "GET FILE", "Requests a file and negotiates block size."],
-      ["0x32", "DATA", "Streams payload packets with sequence and offset fields."],
-      ["0x33", "ACK", "Acknowledges each accepted packet back to the server."],
-      ["0x34", "FILE END", "Finalizes a file and validates CRC when present."],
-    ],
-    pendingText: "Choose a date, then launch the Python UDP receiver.",
-    runningText: "Running Python UDP receiver...",
-    successText: "UDP transfer completed successfully.",
-    failText: "UDP transfer failed. Review the error output below.",
-    launchLabel: "Launching UDP transfer job...",
   },
 };
 
@@ -124,8 +533,134 @@ let wifiReadySelectionLocked = false;
 let wifiReadyConnected = false;
 let wifiReadyScanning = false;
 let wifiReadyConnecting = false;
-const TRANSFER_FAILURE_NOTE =
-  "Please verify that you are connected to a nearby device via Wi-Fi, then restart the transfer.";
+
+function getPersistedLanguage() {
+  try {
+    const value = (window.localStorage.getItem(LANGUAGE_STORAGE_KEY) || "").trim().toLowerCase();
+    if (SUPPORTED_LANGUAGES.includes(value)) {
+      return value;
+    }
+  } catch (_error) {
+  }
+  return DEFAULT_LANGUAGE;
+}
+
+function persistLanguage(language) {
+  try {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  } catch (_error) {
+  }
+}
+
+function resolveText(language, key) {
+  const source = I18N[language] || I18N[DEFAULT_LANGUAGE];
+  return key.split(".").reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : undefined), source);
+}
+
+function tr(key, variables = {}) {
+  const fallback = resolveText(DEFAULT_LANGUAGE, key);
+  const template = resolveText(currentLanguage, key);
+  const text = typeof template === "string" ? template : (typeof fallback === "string" ? fallback : key);
+
+  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_all, name) => {
+    if (Object.prototype.hasOwnProperty.call(variables, name)) {
+      return String(variables[name]);
+    }
+    return "";
+  });
+}
+
+function getModeText(modeKey) {
+  const fallback = resolveText(DEFAULT_LANGUAGE, `mode.${modeKey}`) || {};
+  const localized = resolveText(currentLanguage, `mode.${modeKey}`) || {};
+  return {
+    ...fallback,
+    ...localized,
+  };
+}
+
+function applyI18nToDom() {
+  document.documentElement.lang = currentLanguage === "zh" ? "zh-CN" : "en";
+
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    const key = node.getAttribute("data-i18n");
+    if (!key) {
+      return;
+    }
+    node.textContent = tr(key);
+  });
+
+  document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+    const key = node.getAttribute("data-i18n-title");
+    if (!key) {
+      return;
+    }
+    node.setAttribute("title", tr(key));
+  });
+
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((node) => {
+    const key = node.getAttribute("data-i18n-aria-label");
+    if (!key) {
+      return;
+    }
+    node.setAttribute("aria-label", tr(key));
+  });
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+    const key = node.getAttribute("data-i18n-placeholder");
+    if (!key) {
+      return;
+    }
+    node.setAttribute("placeholder", tr(key));
+  });
+
+  if (languageToggleIcon) {
+    languageToggleIcon.textContent = tr("nav.languageIcon");
+  }
+  if (languageToggleText) {
+    languageToggleText.textContent = tr("nav.languageNext");
+  }
+  if (languageToggleButton) {
+    languageToggleButton.setAttribute("title", tr("nav.languageTitle"));
+    languageToggleButton.setAttribute("aria-label", tr("nav.languageTitle"));
+  }
+}
+
+function toggleLanguage() {
+  currentLanguage = currentLanguage === "en" ? "zh" : "en";
+  persistLanguage(currentLanguage);
+  applyI18nToDom();
+  renderActiveNavigation();
+  renderTransferMode(currentTransferMode);
+  if (receivedBrowser) {
+    renderReceivedTransferBrowser();
+  }
+  if (receivedFolderModal && !receivedFolderModal.hidden) {
+    renderReceivedFolderModal();
+  }
+  if (wifiReadyList && wifiReadyButton && wifiReadyLabel) {
+    renderWifiReadyCards({
+      showScanning: !wifiReadyNetworks.length,
+      scanningLabel: tr("wifi.scanning"),
+      disabled: wifiReadyConnecting,
+      connecting: wifiReadyConnecting,
+      connected: wifiReadyConnected,
+    });
+  }
+  if (receivedFileViewer && !activeReceivedFileName) {
+    renderReceivedViewerMessage("received-viewer-empty", tr("transfer.datViewerSelect"));
+  }
+}
+
+function bindLanguageToggle() {
+  if (!languageToggleButton) {
+    return;
+  }
+
+  languageToggleButton.addEventListener("click", () => {
+    toggleLanguage();
+  });
+}
 
 function getPersistedWifiName() {
   try {
@@ -209,7 +744,7 @@ function setWifiReadyButton(options) {
   }
 
   const {
-    label = "Scanning Wi-Fi...",
+    label = tr("wifi.scanning"),
     found = false,
     pulsing = false,
     connecting = false,
@@ -263,7 +798,7 @@ function createWifiReadyCard(network, options = {}) {
   const label = document.createElement("span");
   label.className = "wifi-ready-name";
   if (connecting && selected) {
-    label.textContent = `Connecting ${network.ssid}...`;
+    label.textContent = tr("wifi.connectingPassword", { ssid: network.ssid });
   } else {
     label.textContent = network.ssid;
   }
@@ -283,7 +818,7 @@ function renderWifiReadyCards(options = {}) {
 
   const {
     showScanning = false,
-    scanningLabel = "Scanning Wi-Fi...",
+    scanningLabel = tr("wifi.scanning"),
     disabled = false,
     connecting = false,
     connected = false,
@@ -327,9 +862,7 @@ function renderWifiReadyCards(options = {}) {
         if (wifiConnectForm && wifiConnectForm.hidden) {
           showWifiConnectForm();
         }
-        setWifiReadyStatus(
-          `Selected ${wifiReadySsid}. Enter password, or click Use Saved to connect with stored credentials.`,
-        );
+        setWifiReadyStatus(tr("wifi.networkPending", { ssid: wifiReadySsid }));
       },
       selectionLocked: wifiReadySelectionLocked,
     });
@@ -391,19 +924,19 @@ async function scanReadyCheckWifi(options = {}) {
   if (!silent) {
     renderWifiReadyCards({
       showScanning: true,
-      scanningLabel: "Scanning Wi-Fi...",
+      scanningLabel: tr("wifi.scanning"),
       disabled: true,
     });
-    setWifiReadyStatus("Scanning for nearby ESP-* networks...");
+    setWifiReadyStatus(tr("wifi.scanningNearby"));
   }
 
   if (!filetransferApi || typeof filetransferApi.scanWifi !== "function") {
     renderWifiReadyCards({
       showScanning: true,
-      scanningLabel: "Wi-Fi API Unavailable",
+      scanningLabel: tr("wifi.apiUnavailable"),
       disabled: true,
     });
-    setWifiReadyStatus("Renderer could not access Wi-Fi API. Please restart the app.", "error");
+    setWifiReadyStatus(tr("wifi.apiUnavailable"), "error");
     wifiReadyScanning = false;
     return;
   }
@@ -412,7 +945,7 @@ async function scanReadyCheckWifi(options = {}) {
     const result = await filetransferApi.scanWifi();
 
     if (!result || !result.ok) {
-      const errorText = result && result.error ? result.error : "Unable to scan Wi-Fi networks.";
+      const errorText = result && result.error ? result.error : tr("wifi.scanFailed");
       const hasLastKnown = Boolean(wifiReadySsid);
       wifiReadyNetworks = hasLastKnown
         ? [{ ssid: wifiReadySsid, signal: 0, stale: true }]
@@ -426,7 +959,7 @@ async function scanReadyCheckWifi(options = {}) {
           connected: false,
         });
         setWifiReadyStatus(
-          `Using last detected ${wifiReadySsid}. Scan warning: ${errorText}`,
+          tr("wifi.usingLastKnown", { ssid: wifiReadySsid, error: errorText }),
           "error",
         );
         scheduleWifiScan(7000);
@@ -435,7 +968,7 @@ async function scanReadyCheckWifi(options = {}) {
 
       renderWifiReadyCards({
         showScanning: true,
-        scanningLabel: "Scan Failed - Retry",
+        scanningLabel: tr("wifi.scanButton"),
         disabled: false,
       });
       setWifiReadyStatus(errorText, "error");
@@ -477,15 +1010,15 @@ async function scanReadyCheckWifi(options = {}) {
       });
 
       const prefix = result.requestedEnable
-        ? "Wi-Fi adapter enabled. "
+        ? tr("wifi.adapterEnabledPrefix")
         : "";
       const networkCount = wifiReadyNetworks.length;
       const networkHint =
         networkCount > 1
-          ? `Detected ${networkCount} ESP networks. Click one of the green cards to continue.`
-          : `Detected ${wifiReadySsid}.`;
+          ? tr("wifi.detectedMultiple", { count: networkCount })
+          : tr("wifi.detectedSingle", { ssid: wifiReadySsid });
       setWifiReadyStatus(
-        `${prefix}${networkHint} Click to choose network and connect.`,
+        `${prefix}${networkHint}`,
         "success",
       );
       scheduleWifiScan(12000);
@@ -501,7 +1034,7 @@ async function scanReadyCheckWifi(options = {}) {
         connected: false,
       });
       setWifiReadyStatus(
-        `No ESP network in this scan. Keeping last detected ${wifiReadySsid}.`,
+        tr("wifi.noEspKeepLast", { ssid: wifiReadySsid }),
       );
       scheduleWifiScan(5000);
       return;
@@ -513,10 +1046,10 @@ async function scanReadyCheckWifi(options = {}) {
     hideWifiConnectForm();
     renderWifiReadyCards({
       showScanning: true,
-      scanningLabel: "Scanning Wi-Fi...",
+      scanningLabel: tr("wifi.scanning"),
       disabled: false,
     });
-    setWifiReadyStatus("No ESP-* network found yet. Keep the device nearby and wait for refresh.");
+    setWifiReadyStatus(tr("wifi.noEspFound"));
     scheduleWifiScan(5000);
   } catch (error) {
     console.error(error);
@@ -529,7 +1062,10 @@ async function scanReadyCheckWifi(options = {}) {
         connected: false,
       });
       setWifiReadyStatus(
-        `Scan exception; keeping ${wifiReadySsid}. ${error && error.message ? error.message : ""}`,
+        tr("wifi.scanExceptionKeep", {
+          ssid: wifiReadySsid,
+          error: error && error.message ? error.message : "",
+        }),
         "error",
       );
       scheduleWifiScan(7000);
@@ -541,11 +1077,11 @@ async function scanReadyCheckWifi(options = {}) {
     setReadyConfirmState(false);
     renderWifiReadyCards({
       showScanning: true,
-      scanningLabel: "Scan Failed - Retry",
+      scanningLabel: tr("wifi.scanButton"),
       disabled: false,
     });
     setWifiReadyStatus(
-      error && error.message ? error.message : "Wi-Fi scan failed unexpectedly.",
+      error && error.message ? error.message : tr("wifi.scanFailed"),
       "error",
     );
     scheduleWifiScan(7000);
@@ -556,7 +1092,7 @@ async function scanReadyCheckWifi(options = {}) {
 
 async function connectReadyWifi(options = {}) {
   if (!wifiReadySsid) {
-    setWifiReadyStatus("Please wait until an ESP-* network is detected.", "error");
+    setWifiReadyStatus(tr("wifi.noEspDetected"), "error");
     return;
   }
 
@@ -568,7 +1104,7 @@ async function connectReadyWifi(options = {}) {
   const password = useSavedProfile ? "" : wifiPasswordInput.value.trim();
 
   if (!filetransferApi || typeof filetransferApi.connectWifi !== "function") {
-    setWifiReadyStatus("Wi-Fi connect API is unavailable. Restart the app and try again.", "error");
+    setWifiReadyStatus(tr("wifi.connectApiUnavailable"), "error");
     return;
   }
 
@@ -583,9 +1119,9 @@ async function connectReadyWifi(options = {}) {
     connected: false,
   });
   if (useSavedProfile || !password) {
-    setWifiReadyStatus(`Trying saved profile for ${wifiReadySsid}...`);
+    setWifiReadyStatus(tr("wifi.connectingSaved", { ssid: wifiReadySsid }));
   } else {
-    setWifiReadyStatus(`Trying to connect to ${wifiReadySsid}...`);
+    setWifiReadyStatus(tr("wifi.connectingPassword", { ssid: wifiReadySsid }));
   }
 
   try {
@@ -595,7 +1131,7 @@ async function connectReadyWifi(options = {}) {
     });
 
     if (!result || !result.ok) {
-      const errorText = result && result.error ? result.error : "Wi-Fi connection failed.";
+      const errorText = result && result.error ? result.error : tr("wifi.connectFailed");
       wifiReadyConnected = false;
       setReadyConfirmState(false);
       renderWifiReadyCards({
@@ -619,20 +1155,20 @@ async function connectReadyWifi(options = {}) {
       connecting: false,
       connected: true,
     });
-    setWifiReadyStatus(result.message || `Connected to ${wifiReadySsid}.`, "success");
+    setWifiReadyStatus(result.message || tr("wifi.connected", { ssid: wifiReadySsid }), "success");
   } catch (error) {
     console.error(error);
     wifiReadyConnected = false;
     setReadyConfirmState(false);
     renderWifiReadyCards({
       showScanning: !wifiReadySsid,
-      scanningLabel: wifiReadySsid ? "Scanning Wi-Fi..." : "Scan Wi-Fi",
+      scanningLabel: wifiReadySsid ? tr("wifi.scanning") : tr("wifi.scanButton"),
       disabled: false,
       connecting: false,
       connected: false,
     });
     setWifiReadyStatus(
-      error && error.message ? error.message : "Wi-Fi connection failed unexpectedly.",
+      error && error.message ? error.message : tr("wifi.connectFailed"),
       "error",
     );
   } finally {
@@ -682,7 +1218,7 @@ function bindReadyCheckWifi() {
     readyConfirmButton.addEventListener("click", (event) => {
       if (readyConfirmButton.getAttribute("aria-disabled") === "true") {
         event.preventDefault();
-        setWifiReadyStatus("Please connect to a nearby ESP Wi-Fi successfully before confirming.", "error");
+        setWifiReadyStatus(tr("transfer.wifiNeedConnectFirst"), "error");
       }
     });
   }
@@ -733,6 +1269,7 @@ function renderProtocolCommands(commands) {
 
 function renderTransferMode(modeKey) {
   const mode = TRANSFER_MODES[modeKey];
+  const modeText = getModeText(modeKey);
 
   if (!mode) {
     return;
@@ -745,15 +1282,15 @@ function renderTransferMode(modeKey) {
   }
 
   if (protocolStatus) {
-    protocolStatus.textContent = mode.status;
+    protocolStatus.textContent = modeText.status;
   }
 
   if (protocolTitle) {
-    protocolTitle.textContent = mode.title;
+    protocolTitle.textContent = modeText.title;
   }
 
   if (queueTitle) {
-    queueTitle.textContent = mode.queueTitle;
+    queueTitle.textContent = modeText.queueTitle;
   }
 
   if (folderRule) {
@@ -761,19 +1298,21 @@ function renderTransferMode(modeKey) {
   }
 
   if (folderCopy) {
-    folderCopy.textContent = mode.folderCopy;
+    folderCopy.textContent = modeKey === "udp"
+      ? tr("transfer.receivedUdpRule")
+      : tr("transfer.receivedDateRule");
   }
 
   renderMetricValue("metric-transport", mode.metrics.transport);
   renderMetricValue("metric-read", mode.metrics.read);
   renderMetricValue("metric-block", mode.metrics.block);
   renderMetricValue("metric-finish", mode.metrics.finish);
-  renderProtocolCommands(mode.commands);
+  renderProtocolCommands(modeText.commands || []);
   setTransferHelpNote("");
   setTransferLogCollapsed(true);
 
   if (transferActionStatus) {
-    transferActionStatus.textContent = mode.pendingText;
+    transferActionStatus.textContent = modeText.pendingText;
   }
 }
 
@@ -873,7 +1412,7 @@ function createReceivedFolderCard(folder) {
   trigger.type = "button";
   trigger.setAttribute(
     "aria-label",
-    `Open received files for ${folder.dateLabel}`,
+    tr("transfer.openReceivedFor", { date: folder.dateLabel }),
   );
 
   const icon = document.createElement("span");
@@ -889,11 +1428,16 @@ function createReceivedFolderCard(folder) {
 
   const type = document.createElement("span");
   type.className = "received-folder-type";
-  type.textContent = folder.isSpecial ? "Showcase Folder" : `${folder.protocolHint} Folder`;
+  type.textContent = folder.isSpecial
+    ? tr("transfer.showcaseFolder")
+    : tr("transfer.protocolFolder", { protocol: folder.protocolHint });
 
   const size = document.createElement("span");
   size.className = "received-folder-size";
-  size.textContent = `${folder.fileCount} files | ${formatBytes(folder.totalBytes)}`;
+  size.textContent = tr("transfer.filesSummary", {
+    count: folder.fileCount,
+    size: formatBytes(folder.totalBytes),
+  });
 
   meta.append(date, type, size);
   trigger.append(icon, meta);
@@ -945,7 +1489,7 @@ function renderReceivedTransferBrowser() {
   if (!specialFolders.length && !regularFolders.length) {
     renderReceivedBrowserMessage(
       "received-empty",
-      "No received files yet. Completed transfers will appear here by date.",
+      tr("transfer.noReceivedFiles"),
     );
     return;
   }
@@ -953,8 +1497,8 @@ function renderReceivedTransferBrowser() {
   if (specialFolders.length) {
     receivedBrowser.append(
       createReceivedSection(
-        "Example Data",
-        "Showcase dataset bundled with the app for preview and demonstration.",
+        tr("transfer.exampleDataTitle"),
+        tr("transfer.exampleDataDesc"),
         specialFolders,
         "is-special",
       ),
@@ -978,8 +1522,8 @@ function renderReceivedTransferBrowser() {
     groupedByWifi.forEach((folders, wifiName) => {
       receivedBrowser.append(
         createReceivedSection(
-          `${wifiName} Received Transfers`,
-          "Files captured from device transfers, grouped by date.",
+          tr("transfer.wifiTransfersTitle", { wifi: wifiName }),
+          tr("transfer.wifiTransfersDesc"),
           folders,
         ),
       );
@@ -989,7 +1533,7 @@ function renderReceivedTransferBrowser() {
 
   const empty = document.createElement("p");
   empty.className = "received-empty";
-  empty.textContent = "No actual receive folders yet. Start a transfer to populate this section.";
+  empty.textContent = tr("transfer.noActualFolders");
   receivedBrowser.append(empty);
 }
 
@@ -1138,7 +1682,7 @@ function drawAxisChart(canvas, axisData) {
 
     context.fillStyle = "#c44747";
     context.font = "700 11px 'Segoe UI', sans-serif";
-    context.fillText("threshold", padding.left + 8, Math.max(12, thresholdY - 7));
+    context.fillText(tr("transfer.threshold"), padding.left + 8, Math.max(12, thresholdY - 7));
   }
 
   context.strokeStyle = "#2f78b7";
@@ -1180,12 +1724,12 @@ function createAxisChart(axisLabel, axisData) {
 
   const title = document.createElement("span");
   title.className = "received-axis-chart-title";
-  title.textContent = `${axisLabel} Data Chart`;
+  title.textContent = `${axisLabel} ${tr("transfer.chartSuffix")}`;
 
   const meta = document.createElement("span");
   meta.className = "received-axis-chart-meta";
   meta.textContent =
-    `${axisData.count} pts | min ${formatViewerNumber(axisData.min)} | max ${formatViewerNumber(axisData.max)}`;
+    `${axisData.count} ${tr("transfer.pointsShort")} | ${tr("transfer.minimumShort")} ${formatViewerNumber(axisData.min)} | ${tr("transfer.maximumShort")} ${formatViewerNumber(axisData.max)}`;
 
   const canvas = document.createElement("canvas");
   canvas.className = "received-axis-canvas";
@@ -1206,17 +1750,17 @@ function renderAxisSection(axisLabel, axisData) {
   section.className = "received-viewer-section";
 
   const heading = document.createElement("h5");
-  heading.textContent = `${axisLabel} Axis`;
+  heading.textContent = `${axisLabel} ${tr("transfer.axisSuffix")}`;
   section.append(heading);
 
   section.append(
     createViewerGrid([
-      ["Count", String(axisData.count)],
-      ["Mean", formatViewerNumber(axisData.mean)],
-      ["Median", formatViewerNumber(axisData.median)],
-      ["Std", formatViewerNumber(axisData.std)],
-      ["Threshold", formatViewerNumber(axisData.threshold)],
-      ["High Alerts", String(axisData.highCount)],
+      [tr("transfer.count"), String(axisData.count)],
+      [tr("transfer.mean"), formatViewerNumber(axisData.mean)],
+      [tr("transfer.median"), formatViewerNumber(axisData.median)],
+      [tr("transfer.std"), formatViewerNumber(axisData.std)],
+      [tr("transfer.thresholdLabel"), formatViewerNumber(axisData.threshold)],
+      [tr("transfer.highAlerts"), String(axisData.highCount)],
     ]),
   );
 
@@ -1225,12 +1769,12 @@ function renderAxisSection(axisLabel, axisData) {
   section.append(alertText);
 
   if (!axisData.highCount || !Array.isArray(axisData.highAlerts) || !axisData.highAlerts.length) {
-    alertText.textContent = "No high-value alerts.";
+    alertText.textContent = tr("transfer.noHighAlerts");
     section.append(createAxisChart(axisLabel, axisData));
     return section;
   }
 
-  alertText.textContent = `Top ${axisData.highAlerts.length} high-value alerts:`;
+  alertText.textContent = tr("transfer.highAlertsTop", { count: axisData.highAlerts.length });
 
   const alerts = document.createElement("ul");
   alerts.className = "received-viewer-alerts";
@@ -1264,7 +1808,7 @@ function renderReceivedDatViewer(payload) {
   const sensors = document.createElement("section");
   sensors.className = "received-viewer-section";
   const sensorsTitle = document.createElement("h5");
-  sensorsTitle.textContent = "Sensors";
+  sensorsTitle.textContent = tr("transfer.sensors");
   sensors.append(sensorsTitle);
   sensors.append(
     createViewerGrid([
@@ -1283,14 +1827,14 @@ function renderReceivedDatViewer(payload) {
   const sampling = document.createElement("section");
   sampling.className = "received-viewer-section";
   const samplingTitle = document.createElement("h5");
-  samplingTitle.textContent = "Sampling";
+  samplingTitle.textContent = tr("transfer.sampling");
   sampling.append(samplingTitle);
   sampling.append(
     createViewerGrid([
-      ["Sample Size", String(payload.sampling.sampleSize)],
-      ["Start Timestamp", String(payload.sampling.startTimestamp)],
-      ["Sample Size2", String(payload.sampling.sampleSize2)],
-      ["Trailing Bytes", String(payload.sampling.trailingBytes)],
+      [tr("transfer.sampleSize"), String(payload.sampling.sampleSize)],
+      [tr("transfer.startTimestamp"), String(payload.sampling.startTimestamp)],
+      [tr("transfer.sampleSize2"), String(payload.sampling.sampleSize2)],
+      [tr("transfer.trailingBytes"), String(payload.sampling.trailingBytes)],
     ]),
   );
   receivedFileViewer.append(sampling);
@@ -1305,7 +1849,7 @@ function renderReceivedDatViewer(payload) {
   } else {
     const axisNote = document.createElement("p");
     axisNote.className = "received-viewer-note";
-    axisNote.textContent = "Separator is not 0xFF, no XYZ sample arrays in this file.";
+    axisNote.textContent = tr("transfer.datNotFf");
     receivedFileViewer.append(axisNote);
   }
 }
@@ -1318,14 +1862,14 @@ async function inspectReceivedDatFile(folderName, fileName) {
   if (!filetransferApi || typeof filetransferApi.readDat !== "function") {
     renderReceivedViewerMessage(
       "received-viewer-error",
-      "Dat parser API is unavailable until the app is restarted.",
+      tr("transfer.datApiUnavailable"),
     );
     return;
   }
 
   const requestId = Date.now();
   receivedViewerRequestId = requestId;
-  renderReceivedViewerMessage("received-viewer-note", "Reading and parsing file...");
+  renderReceivedViewerMessage("received-viewer-note", tr("transfer.datViewerReading"));
 
   try {
     const result = await filetransferApi.readDat({ folderName, fileName });
@@ -1337,7 +1881,7 @@ async function inspectReceivedDatFile(folderName, fileName) {
     if (!result || !result.ok) {
       renderReceivedViewerMessage(
         "received-viewer-error",
-        result && result.error ? result.error : "Unable to parse selected .dat file.",
+        result && result.error ? result.error : tr("transfer.datParseFailed"),
       );
       return;
     }
@@ -1350,7 +1894,7 @@ async function inspectReceivedDatFile(folderName, fileName) {
     }
     renderReceivedViewerMessage(
       "received-viewer-error",
-      "Dat parser failed to respond.",
+      tr("transfer.datParserNoResponse"),
     );
   }
 }
@@ -1372,26 +1916,29 @@ function renderReceivedFolderModal() {
     receivedFolderModal.hidden = true;
     receivedFolderModal.classList.remove("is-open");
     receivedFolderModal.setAttribute("aria-hidden", "true");
-    renderReceivedViewerMessage("received-viewer-empty", "Select a .dat file to view parsed content.");
+    renderReceivedViewerMessage("received-viewer-empty", tr("transfer.datViewerSelect"));
     return;
   }
 
   receivedFolderTitle.textContent = folder.dateLabel;
   receivedFolderSummary.textContent =
-    `${folder.protocolHint} folder | ${folder.fileCount} files | ${formatBytes(folder.totalBytes)}`;
+    `${tr("transfer.protocolFolder", { protocol: folder.protocolHint })} | ${tr("transfer.filesSummary", {
+      count: folder.fileCount,
+      size: formatBytes(folder.totalBytes),
+    })}`;
   receivedFolderList.replaceChildren();
 
   if (!folder.files.length) {
     const empty = document.createElement("p");
     empty.className = "received-modal-empty";
-    empty.textContent = "This folder is empty right now.";
+    empty.textContent = tr("transfer.datFolderCardEmpty");
     receivedFolderList.append(empty);
     activeReceivedFileName = "";
-    renderReceivedViewerMessage("received-viewer-empty", "No .dat files in this folder.");
+    renderReceivedViewerMessage("received-viewer-empty", tr("transfer.datFolderEmpty"));
   } else {
     if (!folder.files.some((file) => file.name === activeReceivedFileName)) {
       activeReceivedFileName = "";
-      renderReceivedViewerMessage("received-viewer-empty", "Select a .dat file to view parsed content.");
+      renderReceivedViewerMessage("received-viewer-empty", tr("transfer.datViewerSelect"));
     }
 
     folder.files.forEach((file) => {
@@ -1434,7 +1981,7 @@ function closeReceivedFolderModal() {
   activeReceivedFolder = "";
   activeReceivedFileName = "";
   receivedViewerRequestId = 0;
-  renderReceivedViewerMessage("received-viewer-empty", "Select a .dat file to view parsed content.");
+  renderReceivedViewerMessage("received-viewer-empty", tr("transfer.datViewerSelect"));
   renderReceivedFolderModal();
 }
 
@@ -1442,7 +1989,7 @@ function openReceivedFolderModal(folderName) {
   activeReceivedFolder = folderName;
   activeReceivedFileName = "";
   receivedViewerRequestId = 0;
-  renderReceivedViewerMessage("received-viewer-empty", "Select a .dat file to view parsed content.");
+  renderReceivedViewerMessage("received-viewer-empty", tr("transfer.datViewerSelect"));
   renderReceivedFolderModal();
 }
 
@@ -1454,7 +2001,7 @@ async function refreshReceivedTransferBrowser() {
   if (!filetransferApi || typeof filetransferApi.listReceived !== "function") {
     renderReceivedBrowserMessage(
       "received-error",
-      "Received-file browser is unavailable until the app is restarted.",
+      tr("transfer.datBrowserUnavailable"),
     );
     return;
   }
@@ -1476,7 +2023,7 @@ async function refreshReceivedTransferBrowser() {
     closeReceivedFolderModal();
     renderReceivedBrowserMessage(
       "received-error",
-      "Unable to load received files right now.",
+      tr("transfer.datBrowserLoadFailed"),
     );
   }
 }
@@ -1538,7 +2085,7 @@ function resetTransferDashboard(modeKey) {
   };
 
   renderTransferMode(modeKey);
-  updateText(statCurrentFile, "Waiting");
+  updateText(statCurrentFile, tr("transfer.currentFileWaiting"));
   updateText(statFileSize, "0 B");
   updateText(statWriteSpeed, "0 B/s");
   updateText(statRemaining, "0 B");
@@ -1617,7 +2164,7 @@ function handleStructuredTransferEvent(eventPayload) {
   }
 
   if (eventPayload.type === "file_start") {
-    updateText(statCurrentFile, eventPayload.name || "Unknown");
+    updateText(statCurrentFile, eventPayload.name || tr("transfer.currentFileUnknown"));
     updateText(statFileSize, formatBytes(eventPayload.size));
     updateText(statWriteSpeed, "0 B/s");
     updateText(statRemaining, formatBytes(eventPayload.remaining));
@@ -1626,7 +2173,7 @@ function handleStructuredTransferEvent(eventPayload) {
   }
 
   if (eventPayload.type === "file_progress") {
-    updateText(statCurrentFile, eventPayload.name || "Unknown");
+    updateText(statCurrentFile, eventPayload.name || tr("transfer.currentFileUnknown"));
     updateText(statFileSize, formatBytes(eventPayload.size));
     updateText(statWriteSpeed, formatSpeed(eventPayload.bps));
     updateText(statRemaining, formatBytes(eventPayload.remaining));
@@ -1636,7 +2183,7 @@ function handleStructuredTransferEvent(eventPayload) {
 
   if (eventPayload.type === "file_done") {
     transferRuntime.completedFiles += 1;
-    updateText(statCurrentFile, eventPayload.name || "Done");
+    updateText(statCurrentFile, eventPayload.name || tr("transfer.currentFileDone"));
     updateText(statFileSize, formatBytes(eventPayload.size));
     updateText(statWriteSpeed, formatSpeed(eventPayload.bps));
     updateText(statRemaining, "0 B");
@@ -1710,23 +2257,24 @@ async function startTransfer(modeKey) {
     return;
   }
 
-  const mode = TRANSFER_MODES[modeKey];
-  if (!mode) {
+  const modeConfig = TRANSFER_MODES[modeKey];
+  const mode = getModeText(modeKey);
+  if (!modeConfig || !mode) {
     return;
   }
 
   const selectedDate = normalizeTransferDateInput(transferDateInput.value);
 
   if (!selectedDate) {
-    transferActionStatus.textContent = "Please choose a valid transfer date first.";
+    transferActionStatus.textContent = tr("transfer.chooseDateFirst");
     return;
   }
 
   if (!filetransferApi) {
-    transferActionStatus.textContent = "Transfer API is unavailable. Restart the app to reload preload scripts.";
+    transferActionStatus.textContent = tr("transfer.apiUnavailable");
     setTransferHelpNote("");
     setTransferLogCollapsed(false);
-    transferLog.textContent = "Renderer could not access window.appApi.filetransfer.";
+    transferLog.textContent = tr("transfer.rendererApiError");
     return;
   }
 
@@ -1740,7 +2288,7 @@ async function startTransfer(modeKey) {
   transferStreamBuffer = "";
   transferLogLines = [];
   transferLiveLine = "";
-  appendTransferLog(`${mode.launchLabel}\nSelected date: ${selectedDate}\n`);
+  appendTransferLog(`${mode.launchLabel}\n${tr("transfer.selectedDate", { date: selectedDate })}\n`);
 
   try {
     const activeWifiName = getPersistedWifiName() || DEFAULT_TRANSFER_WIFI_NAME;
@@ -1758,14 +2306,14 @@ async function startTransfer(modeKey) {
       const isTransferFailure = !result.error;
 
       transferActionStatus.textContent = errorText;
-      setTransferHelpNote(isTransferFailure ? TRANSFER_FAILURE_NOTE : "");
+      setTransferHelpNote(isTransferFailure ? tr("transfer.failureNote") : "");
       setTransferLogCollapsed(!isTransferFailure);
-      appendTransferLog(`\n${errorText || "Failed to launch transfer."}\n`);
+      appendTransferLog(`\n${errorText || tr("transfer.launchFailedFallback")}\n`);
       transferButton.disabled = false;
       udpTransferButton.disabled = false;
     }
   } catch (error) {
-    transferActionStatus.textContent = "Transfer launch failed before the receiver started.";
+    transferActionStatus.textContent = tr("transfer.launchFailed");
     setTransferHelpNote("");
     setTransferLogCollapsed(false);
     transferStreamBuffer = "";
@@ -1789,7 +2337,8 @@ function bindTransferLauncher() {
 
   if (filetransferApi && typeof filetransferApi.onEvent === "function") {
     filetransferApi.onEvent((payload) => {
-      const mode = TRANSFER_MODES[payload.mode] || TRANSFER_MODES[currentTransferMode];
+      const modeKey = payload.mode || currentTransferMode;
+      const mode = getModeText(modeKey);
 
       if (payload.type === "started") {
         if (payload.mode) {
@@ -1810,7 +2359,7 @@ function bindTransferLauncher() {
       if (payload.type === "error") {
         appendTransferLog(`\n${payload.message}\n`);
         transferActionStatus.textContent = mode.failText;
-        setTransferHelpNote(TRANSFER_FAILURE_NOTE);
+        setTransferHelpNote(tr("transfer.failureNote"));
         setTransferLogCollapsed(false);
         void refreshReceivedTransferBrowser();
         transferButton.disabled = false;
@@ -1823,10 +2372,13 @@ function bindTransferLauncher() {
           consumeTransferChunk("\n");
         }
         appendTransferLog(
-          `\nProcess exited with code ${payload.code}${payload.signal ? ` (${payload.signal})` : ""}.\n`,
+          `\n${tr("transfer.processExited", {
+            code: payload.code,
+            signal: payload.signal ? ` (${payload.signal})` : "",
+          })}\n`,
         );
         transferActionStatus.textContent = payload.ok ? mode.successText : mode.failText;
-        setTransferHelpNote(payload.ok ? "" : TRANSFER_FAILURE_NOTE);
+        setTransferHelpNote(payload.ok ? "" : tr("transfer.failureNote"));
         setTransferLogCollapsed(payload.ok);
         void refreshReceivedTransferBrowser();
         transferButton.disabled = false;
@@ -1835,7 +2387,7 @@ function bindTransferLauncher() {
     });
   } else {
     transferActionStatus.textContent =
-      "Realtime transfer events are unavailable until the app is restarted.";
+      tr("transfer.noRealtimeEvents");
   }
 
   renderTransferMode(currentTransferMode);
@@ -1878,6 +2430,8 @@ function bindTransferLauncher() {
   }
 }
 
+applyI18nToDom();
+bindLanguageToggle();
 renderActiveNavigation();
 bindHomeWebview();
 bindReadyCheckWifi();
