@@ -45,6 +45,8 @@ const wifiConnectSaved = document.getElementById("wifi-connect-saved");
 const TRANSFER_EVENT_PREFIX = "@@EVENT@@ ";
 const filetransferApi =
   window.appApi && window.appApi.filetransfer ? window.appApi.filetransfer : null;
+const ACTIVE_WIFI_STORAGE_KEY = "rh_active_wifi_name";
+const DEFAULT_TRANSFER_WIFI_NAME = "ESP32-S3";
 
 const TRANSFER_MODES = {
   tcp: {
@@ -124,6 +126,26 @@ let wifiReadyScanning = false;
 let wifiReadyConnecting = false;
 const TRANSFER_FAILURE_NOTE =
   "Please verify that you are connected to a nearby device via Wi-Fi, then restart the transfer.";
+
+function getPersistedWifiName() {
+  try {
+    const value = window.localStorage.getItem(ACTIVE_WIFI_STORAGE_KEY) || "";
+    return value.trim();
+  } catch (_error) {
+    return "";
+  }
+}
+
+function persistWifiName(value) {
+  const safe = String(value || "").trim();
+  if (!safe) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(ACTIVE_WIFI_STORAGE_KEY, safe);
+  } catch (_error) {
+  }
+}
 
 function renderActiveNavigation() {
   const currentPage = document.body.dataset.currentPage;
@@ -434,7 +456,9 @@ async function scanReadyCheckWifi(options = {}) {
     }
 
     if (!wifiReadySsid && wifiReadyNetworks.length) {
-      wifiReadySsid = wifiReadyNetworks[0].ssid;
+      const persisted = getPersistedWifiName();
+      const matchedPersisted = wifiReadyNetworks.find((item) => item.ssid === persisted);
+      wifiReadySsid = matchedPersisted ? matchedPersisted.ssid : wifiReadyNetworks[0].ssid;
       wifiReadySelectionLocked = false;
       wifiReadyConnected = false;
       setReadyConfirmState(false);
@@ -587,6 +611,7 @@ async function connectReadyWifi(options = {}) {
     hideWifiConnectForm();
     wifiPasswordInput.value = "";
     wifiReadyConnected = true;
+    persistWifiName(wifiReadySsid);
     setReadyConfirmState(true);
     renderWifiReadyCards({
       showScanning: false,
@@ -937,13 +962,28 @@ function renderReceivedTransferBrowser() {
   }
 
   if (regularFolders.length) {
-    receivedBrowser.append(
-      createReceivedSection(
-        "Received Transfers",
-        "Files captured from device transfers, grouped by date.",
-        regularFolders,
-      ),
-    );
+    const groupedByWifi = new Map();
+    regularFolders.forEach((folder) => {
+      const wifiName =
+        typeof folder.wifiName === "string" && folder.wifiName.trim()
+          ? folder.wifiName.trim()
+          : DEFAULT_TRANSFER_WIFI_NAME;
+
+      if (!groupedByWifi.has(wifiName)) {
+        groupedByWifi.set(wifiName, []);
+      }
+      groupedByWifi.get(wifiName).push(folder);
+    });
+
+    groupedByWifi.forEach((folders, wifiName) => {
+      receivedBrowser.append(
+        createReceivedSection(
+          `${wifiName} Received Transfers`,
+          "Files captured from device transfers, grouped by date.",
+          folders,
+        ),
+      );
+    });
     return;
   }
 
@@ -1700,10 +1740,15 @@ async function startTransfer(modeKey) {
   appendTransferLog(`${mode.launchLabel}\nSelected date: ${selectedDate}\n`);
 
   try {
+    const activeWifiName = getPersistedWifiName() || DEFAULT_TRANSFER_WIFI_NAME;
+    const transferRequest = {
+      dateText: selectedDate,
+      wifiName: activeWifiName,
+    };
     const result =
       modeKey === "udp"
-        ? await filetransferApi.startUdp(selectedDate)
-        : await filetransferApi.start(selectedDate);
+        ? await filetransferApi.startUdp(transferRequest)
+        : await filetransferApi.start(transferRequest);
 
     if (!result.ok) {
       const errorText = result.error || mode.failText;

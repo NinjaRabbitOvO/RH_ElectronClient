@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-16T01:56:29.835Z",
-  "headCommit": "d6e772514cae9fd5956503c2f0bc14080e673edd",
+  "timestamp": "2026-03-16T02:17:24.208Z",
+  "headCommit": "adf5c31cb54516a8e6a3e97af51e9ae92b5d0e01",
   "baselines": {
     "projectBaselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
     "trackingStartCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
@@ -8,44 +8,44 @@
   },
   "projectTotals": {
     "baselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
-    "changedFiles": 27,
-    "writtenLines": 6810,
-    "deletedLines": 88,
-    "changeLines": 6898,
-    "totalCommitCount": 40,
-    "featureCommitCount": 21,
+    "changedFiles": 26,
+    "writtenLines": 6924,
+    "deletedLines": 85,
+    "changeLines": 7009,
+    "totalCommitCount": 41,
+    "featureCommitCount": 22,
     "adjustmentCommitCount": 15
   },
   "trackingTotals": {
     "baselineCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
-    "changedFiles": 18,
-    "writtenLines": 3810,
-    "deletedLines": 40,
-    "changeLines": 3850,
-    "totalCommitCount": 21,
-    "featureCommitCount": 11,
+    "changedFiles": 17,
+    "writtenLines": 3924,
+    "deletedLines": 37,
+    "changeLines": 3961,
+    "totalCommitCount": 22,
+    "featureCommitCount": 12,
     "adjustmentCommitCount": 8
   },
   "currentTotals": {
-    "totalLines": 6837,
+    "totalLines": 6954,
     "sourceFileCount": 20
   },
   "majorSourceFiles": [
     {
       "file": "src/renderer/shell.js",
-      "lines": 1836
+      "lines": 1881
     },
     {
       "file": "src/renderer/filetransfer-content.css",
       "lines": 913
     },
     {
-      "file": "src/main/services/wifi.js",
-      "lines": 542
+      "file": "src/main/services/filetransfer.js",
+      "lines": 603
     },
     {
-      "file": "src/main/services/filetransfer.js",
-      "lines": 531
+      "file": "src/main/services/wifi.js",
+      "lines": 542
     },
     {
       "file": "src/renderer/shell.css",
@@ -95,7 +95,7 @@
     },
     {
       "file": "src/main/services/filetransfer.js",
-      "lines": 531
+      "lines": 603
     },
     {
       "file": "src/main/services/wifi.js",
@@ -139,7 +139,7 @@
     },
     {
       "file": "src/renderer/shell.js",
-      "lines": 1836
+      "lines": 1881
     },
     {
       "file": "src/shared/ipc.js",

@@ -7,6 +7,8 @@ const EXECUTION_TIMEOUT_MS = 10 * 60 * 1000;
 const { IPC_CHANNELS } = require("../../shared/ipc");
 const RECEIVE_DIR_PATTERN = /^(RE|Re)(\d{8})$/;
 const EXAMPLE_DATA_FOLDER_NAME = "ExampleData";
+const TRANSFER_WIFI_MAP_FILE = ".transfer_wifi_map.json";
+const DEFAULT_TRANSFER_WIFI_NAME = "ESP32-S3";
 const DAT_EXTENSION_PATTERN = /\.dat$/i;
 const DEFAULT_ANOMALY_SIGMA = 4;
 const DEFAULT_ANOMALY_MIN_GAP = 20;
@@ -38,6 +40,56 @@ function sendTransferEvent(webContents, payload) {
 
 function formatTransferDate(dateText) {
   return `${dateText.slice(0, 4)}-${dateText.slice(4, 6)}-${dateText.slice(6, 8)}`;
+}
+
+function resolveTransferWifiMapPath(rootDirectory) {
+  return path.join(rootDirectory, TRANSFER_WIFI_MAP_FILE);
+}
+
+function readTransferWifiMap(rootDirectory) {
+  const mapPath = resolveTransferWifiMapPath(rootDirectory);
+  if (!fs.existsSync(mapPath) || !fs.statSync(mapPath).isFile()) {
+    return {};
+  }
+
+  try {
+    const raw = fs.readFileSync(mapPath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return {};
+    }
+    return parsed;
+  } catch (_error) {
+    return {};
+  }
+}
+
+function writeTransferWifiMap(rootDirectory, mapping) {
+  const mapPath = resolveTransferWifiMapPath(rootDirectory);
+  const data = JSON.stringify(mapping, null, 2);
+  fs.writeFileSync(mapPath, data, "utf8");
+}
+
+function normalizeWifiName(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value.trim();
+}
+
+function resolveReceiveFolderName(mode, transferDate) {
+  return `${mode === "tcp" ? "RE" : "Re"}${transferDate}`;
+}
+
+function bindFolderWifiName(rootDirectory, mode, transferDate, wifiName) {
+  const folderName = resolveReceiveFolderName(mode, transferDate);
+  const safeWifiName = normalizeWifiName(wifiName) || DEFAULT_TRANSFER_WIFI_NAME;
+
+  const mapping = readTransferWifiMap(rootDirectory);
+  mapping[folderName] = safeWifiName;
+  writeTransferWifiMap(rootDirectory, mapping);
+
+  return safeWifiName;
 }
 
 function listFolderFiles(folderPath) {
@@ -367,6 +419,7 @@ function readReceivedDatFile(request) {
 
 function listReceivedTransfers() {
   const rootDirectory = path.dirname(TCP_SCRIPT_PATH);
+  const wifiMap = readTransferWifiMap(rootDirectory);
   const folders = [];
   const entries = fs.existsSync(rootDirectory)
     ? fs.readdirSync(rootDirectory, { withFileTypes: true })
@@ -392,6 +445,7 @@ function listReceivedTransfers() {
       dateCode,
       dateLabel: formatTransferDate(dateCode),
       protocolHint: match[1] === "RE" ? "TCP" : "UDP",
+      wifiName: normalizeWifiName(wifiMap[entry.name]) || DEFAULT_TRANSFER_WIFI_NAME,
       fileCount: files.length,
       totalBytes: files.reduce((sum, file) => sum + file.size, 0),
       files,
@@ -423,8 +477,10 @@ function listReceivedTransfers() {
   };
 }
 
-function launchTransferProcess(webContents, mode, scriptPath, dateText) {
+function launchTransferProcess(webContents, mode, scriptPath, dateText, wifiName = "") {
   const transferDate = normalizeDateInput(dateText);
+  const rootDirectory = path.dirname(TCP_SCRIPT_PATH);
+  const selectedWifiName = normalizeWifiName(wifiName);
 
   if (activeTransfer) {
     return {
@@ -435,9 +491,16 @@ function launchTransferProcess(webContents, mode, scriptPath, dateText) {
     };
   }
 
+  const boundWifiName = bindFolderWifiName(
+    rootDirectory,
+    mode,
+    transferDate,
+    selectedWifiName,
+  );
+
   const args = ["-3", "-u", scriptPath, transferDate];
   const child = spawn("py", args, {
-    cwd: path.dirname(TCP_SCRIPT_PATH),
+    cwd: rootDirectory,
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -458,6 +521,7 @@ function launchTransferProcess(webContents, mode, scriptPath, dateText) {
     type: "started",
     mode,
     transferDate,
+    wifiName: boundWifiName,
     command: `py -3 -u ${path.basename(scriptPath)} ${transferDate}`,
   });
 
@@ -516,11 +580,19 @@ function launchTransferProcess(webContents, mode, scriptPath, dateText) {
 }
 
 async function runPythonTransfer(webContents, dateText) {
-  return launchTransferProcess(webContents, "tcp", TCP_SCRIPT_PATH, dateText);
+  const request =
+    typeof dateText === "object" && dateText
+      ? dateText
+      : { dateText, wifiName: "" };
+  return launchTransferProcess(webContents, "tcp", TCP_SCRIPT_PATH, request.dateText, request.wifiName);
 }
 
 async function runUdpTransfer(webContents, dateText) {
-  return launchTransferProcess(webContents, "udp", UDP_SCRIPT_PATH, dateText);
+  const request =
+    typeof dateText === "object" && dateText
+      ? dateText
+      : { dateText, wifiName: "" };
+  return launchTransferProcess(webContents, "udp", UDP_SCRIPT_PATH, request.dateText, request.wifiName);
 }
 
 module.exports = {
