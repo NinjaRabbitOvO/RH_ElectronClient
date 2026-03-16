@@ -63,6 +63,17 @@ def build_output_folder(root_dir: str, date_code: str, wifi_name: str) -> str:
     return os.path.join(root_dir, f"{safe_wifi}_Re{date_code}")
 
 
+def remove_empty_dir(directory: str) -> bool:
+    if not directory:
+        return False
+    if not os.path.isdir(directory):
+        return False
+    if os.listdir(directory):
+        return False
+    os.rmdir(directory)
+    return True
+
+
 def format_units(value: float, unit_base: int = 1024) -> Tuple[float, str]:
     units = ["B", "KB", "MB", "GB", "TB"]
     idx = 0
@@ -470,71 +481,79 @@ def main():
     sock.settimeout(2.0)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 256 * 1024)
     addr = ("192.168.4.1", args.port)
+    out_dir = None
 
-    # HELLO
-    send_packet(sock, addr, MSG_HELLO_REQ, session_id, payload=b"")
     try:
-        hdr, _ = recv_packet(sock)
-        if hdr["msg_type"] == MSG_ERROR:
-            code, msg = parse_error(_)
-            print(f"HELLO error: code=0x{code:04X} {msg}")
-        elif hdr["msg_type"] != MSG_HELLO_RSP:
-            print(f"HELLO response unexpected: {hdr['msg_type']}")
-    except Exception:
-        pass
+        # HELLO
+        send_packet(sock, addr, MSG_HELLO_REQ, session_id, payload=b"")
+        try:
+            hdr, _ = recv_packet(sock)
+            if hdr["msg_type"] == MSG_ERROR:
+                code, msg = parse_error(_)
+                print(f"HELLO error: code=0x{code:04X} {msg}")
+            elif hdr["msg_type"] != MSG_HELLO_RSP:
+                print(f"HELLO response unexpected: {hdr['msg_type']}")
+        except Exception:
+            pass
 
-    mode = 1 if args.since else 0
-    files = list_files(sock, addr, session_id, date, mode=mode, since=args.since)
-    if not files:
-        print("No files")
-        emit_event("files_count", count=0)
+        mode = 1 if args.since else 0
+        files = list_files(sock, addr, session_id, date, mode=mode, since=args.since)
+        if not files:
+            print("No files")
+            emit_event("files_count", count=0)
+            return 0
+        emit_event("files_count", count=len(files))
+
+        out_dir = build_output_folder(os.path.dirname(__file__), date, args.wifi_name)
+        os.makedirs(out_dir, exist_ok=True)
+        emit_event("folder", path=out_dir)
+
+        total_bytes = 0
+        total_elapsed = 0.0
+        total_retries = 0
+        peak_speed = 0.0
+        min_speed = None
+        for name, size, _ in files:
+            out_path = os.path.join(out_dir, f"{name}.dat")
+            print(f"Downloading {name}.dat ({size} bytes)")
+            stats = get_file(sock, addr, session_id, date, name, out_path)
+            total_bytes += stats["bytes"]
+            total_elapsed += stats["elapsed"]
+            total_retries += stats["retries"]
+            peak_speed = max(peak_speed, stats["peak_speed"])
+            if min_speed is None or stats["min_speed"] < min_speed:
+                min_speed = stats["min_speed"]
+            print(f"File retries: {stats['retries']}  Time: {stats['elapsed']:.1f}s")
+
+        avg_speed = total_bytes / total_elapsed if total_elapsed > 0 else 0.0
+        if min_speed is None:
+            min_speed = avg_speed
+
+        print("Done")
+        print(f"Total files: {len(files)}")
+        print(f"Total size : {format_size(total_bytes)}")
+        print(f"Total time : {total_elapsed:.1f}s")
+        print(f"Avg/file   : {(total_elapsed / len(files)):.1f}s")
+        print(f"Avg speed  : {format_speed(total_bytes, total_elapsed)}")
+        print(f"Peak speed : {format_speed(peak_speed, 1.0)}")
+        print(f"Min speed  : {format_speed(min_speed, 1.0)}")
+        print(f"Total retries: {total_retries}")
+        emit_event(
+            "summary",
+            total_bytes=total_bytes,
+            elapsed=total_elapsed,
+            average_bps=avg_speed,
+            average_rate=format_speed(total_bytes, total_elapsed),
+            total_files=len(files),
+            total_retries=total_retries,
+        )
         return 0
-    emit_event("files_count", count=len(files))
-
-    out_dir = build_output_folder(os.path.dirname(__file__), date, args.wifi_name)
-    os.makedirs(out_dir, exist_ok=True)
-    emit_event("folder", path=out_dir)
-
-    total_bytes = 0
-    total_elapsed = 0.0
-    total_retries = 0
-    peak_speed = 0.0
-    min_speed = None
-    for name, size, _ in files:
-        out_path = os.path.join(out_dir, f"{name}.dat")
-        print(f"Downloading {name}.dat ({size} bytes)")
-        stats = get_file(sock, addr, session_id, date, name, out_path)
-        total_bytes += stats["bytes"]
-        total_elapsed += stats["elapsed"]
-        total_retries += stats["retries"]
-        peak_speed = max(peak_speed, stats["peak_speed"])
-        if min_speed is None or stats["min_speed"] < min_speed:
-            min_speed = stats["min_speed"]
-        print(f"File retries: {stats['retries']}  Time: {stats['elapsed']:.1f}s")
-
-    avg_speed = total_bytes / total_elapsed if total_elapsed > 0 else 0.0
-    if min_speed is None:
-        min_speed = avg_speed
-
-    print("Done")
-    print(f"Total files: {len(files)}")
-    print(f"Total size : {format_size(total_bytes)}")
-    print(f"Total time : {total_elapsed:.1f}s")
-    print(f"Avg/file   : {(total_elapsed / len(files)):.1f}s")
-    print(f"Avg speed  : {format_speed(total_bytes, total_elapsed)}")
-    print(f"Peak speed : {format_speed(peak_speed, 1.0)}")
-    print(f"Min speed  : {format_speed(min_speed, 1.0)}")
-    print(f"Total retries: {total_retries}")
-    emit_event(
-        "summary",
-        total_bytes=total_bytes,
-        elapsed=total_elapsed,
-        average_bps=avg_speed,
-        average_rate=format_speed(total_bytes, total_elapsed),
-        total_files=len(files),
-        total_retries=total_retries,
-    )
-    return 0
+    except Exception:
+        if out_dir and remove_empty_dir(out_dir):
+            emit_event("folder_cleanup", path=out_dir)
+        raise
+    finally:
+        sock.close()
 
 
 if __name__ == "__main__":

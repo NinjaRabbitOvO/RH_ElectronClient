@@ -45,6 +45,17 @@ def build_output_folder(root_dir: str, date_code: str, wifi_name: str) -> str:
     return os.path.join(root_dir, f"{safe_wifi}_RE{date_code}")
 
 
+def remove_empty_dir(directory: str) -> bool:
+    if not directory:
+        return False
+    if not os.path.isdir(directory):
+        return False
+    if os.listdir(directory):
+        return False
+    os.rmdir(directory)
+    return True
+
+
 class SocketReader:
     __slots__ = ("sock", "buf")
 
@@ -91,110 +102,117 @@ def main():
     total = 0
 
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((HOST, PORT))
-    emit_event("session", mode="tcp", endpoint=f"{HOST}:{PORT}")
+    try:
+        client.connect((HOST, PORT))
+        emit_event("session", mode="tcp", endpoint=f"{HOST}:{PORT}")
 
-    reader = SocketReader(client)
+        reader = SocketReader(client)
 
-    for index, date in enumerate(args.dates, start=1):
-        date_code = str(date).strip()
-        dt = datetime.strptime(date_code, "%Y%m%d")
-        print(f"Date: {date_code}")
-        emit_event("date", date=date_code)
-        count = 1
+        for index, date in enumerate(args.dates, start=1):
+            date_code = str(date).strip()
+            dt = datetime.strptime(date_code, "%Y%m%d")
+            print(f"Date: {date_code}")
+            emit_event("date", date=date_code)
+            count = 1
 
-        folder = build_output_folder(root_dir, date_code, args.wifi_name)
-        os.makedirs(folder, exist_ok=True)
-        emit_event("folder", path=folder)
+            folder = build_output_folder(root_dir, date_code, args.wifi_name)
+            os.makedirs(folder, exist_ok=True)
+            emit_event("folder", path=folder)
 
-        if index == 1:
-            request = bytes([0x11])
-        else:
-            request = bytes([0x01, 0x01, dt.year - 2000, dt.month, dt.day])
-        client.sendall(request)
-
-        while True:
-            cmd = reader.read_u8()
-
-            if cmd == 0x12:
-                dk = reader.read_exact(32)
-                print(f"DK: {dk}")
-                request = bytes([0x01, 0x01, dt.year - 2000, dt.month, dt.day])
+            try:
+                if index == 1:
+                    request = bytes([0x11])
+                else:
+                    request = bytes([0x01, 0x01, dt.year - 2000, dt.month, dt.day])
                 client.sendall(request)
-                continue
 
-            if cmd == 0x02:
-                count = reader.read_u16be()
-                print(f"Files: {count}")
-                emit_event("files_count", count=count)
-                continue
+                while True:
+                    cmd = reader.read_u8()
 
-            if cmd == 0x03:
-                start_ns = time.time_ns()
+                    if cmd == 0x12:
+                        dk = reader.read_exact(32)
+                        print(f"DK: {dk}")
+                        request = bytes([0x01, 0x01, dt.year - 2000, dt.month, dt.day])
+                        client.sendall(request)
+                        continue
 
-                filename_len = reader.read_u8()
-                filename = reader.read_exact(filename_len).decode("UTF-8", errors="strict")
-                base_name = os.path.basename(filename.replace("\\", "/"))
-                save_path = os.path.join(folder, base_name)
+                    if cmd == 0x02:
+                        count = reader.read_u16be()
+                        print(f"Files: {count}")
+                        emit_event("files_count", count=count)
+                        continue
 
-                size = reader.read_u32be()
-                emit_event(
-                    "file_start",
-                    name=base_name,
-                    path=save_path,
-                    size=size,
-                    received=0,
-                    remaining=size,
-                    percent=0.0,
-                )
+                    if cmd == 0x03:
+                        start_ns = time.time_ns()
 
-                with open(save_path, "wb", buffering=1024 * 1024) as output_file:
-                    remaining = size
-                    while remaining > 0:
-                        expected = FILE_CHUNK if remaining > FILE_CHUNK else remaining
-                        data = reader.read_exact(expected)
-                        output_file.write(data)
-                        remaining -= expected
-                        received = size - remaining
-                        elapsed = (time.time_ns() - start_ns) / 1_000_000_000
-                        rate_bps = int(received / elapsed) if elapsed > 0 else 0
-                        percent = (received / size) * 100 if size > 0 else 100.0
+                        filename_len = reader.read_u8()
+                        filename = reader.read_exact(filename_len).decode("UTF-8", errors="strict")
+                        base_name = os.path.basename(filename.replace("\\", "/"))
+                        save_path = os.path.join(folder, base_name)
+
+                        size = reader.read_u32be()
                         emit_event(
-                            "file_progress",
+                            "file_start",
                             name=base_name,
+                            path=save_path,
                             size=size,
-                            received=received,
-                            remaining=remaining,
-                            percent=percent,
-                            bps=rate_bps,
+                            received=0,
+                            remaining=size,
+                            percent=0.0,
                         )
 
-                total += size
-                elapsed_s = (time.time_ns() - start_ns) / 1_000_000_000
-                bps = int(size / elapsed_s) if elapsed_s > 0 else 0
+                        with open(save_path, "wb", buffering=1024 * 1024) as output_file:
+                            remaining = size
+                            while remaining > 0:
+                                expected = FILE_CHUNK if remaining > FILE_CHUNK else remaining
+                                data = reader.read_exact(expected)
+                                output_file.write(data)
+                                remaining -= expected
+                                received = size - remaining
+                                elapsed = (time.time_ns() - start_ns) / 1_000_000_000
+                                rate_bps = int(received / elapsed) if elapsed > 0 else 0
+                                percent = (received / size) * 100 if size > 0 else 100.0
+                                emit_event(
+                                    "file_progress",
+                                    name=base_name,
+                                    size=size,
+                                    received=received,
+                                    remaining=remaining,
+                                    percent=percent,
+                                    bps=rate_bps,
+                                )
 
-                print(f"File: {base_name} -> {save_path} {size} bytes @ {bps} BPS")
-                emit_event(
-                    "file_done",
-                    name=base_name,
-                    path=save_path,
-                    size=size,
-                    received=size,
-                    remaining=0,
-                    percent=100.0,
-                    bps=bps,
-                )
-                count -= 1
-                continue
+                        total += size
+                        elapsed_s = (time.time_ns() - start_ns) / 1_000_000_000
+                        bps = int(size / elapsed_s) if elapsed_s > 0 else 0
 
-            if cmd == 0x04:
-                print(f"End of files ({count})")
-                break
+                        print(f"File: {base_name} -> {save_path} {size} bytes @ {bps} BPS")
+                        emit_event(
+                            "file_done",
+                            name=base_name,
+                            path=save_path,
+                            size=size,
+                            received=size,
+                            remaining=0,
+                            percent=100.0,
+                            bps=bps,
+                        )
+                        count -= 1
+                        continue
 
-            raise ValueError(f"Unknown command byte: 0x{cmd:02X}")
+                    if cmd == 0x04:
+                        print(f"End of files ({count})")
+                        break
 
-    client.sendall(bytes([0x21]))
-    client.close()
+                    raise ValueError(f"Unknown command byte: 0x{cmd:02X}")
+            except Exception:
+                if remove_empty_dir(folder):
+                    emit_event("folder_cleanup", path=folder)
+                raise
+
+        client.sendall(bytes([0x21]))
+    finally:
+        client.close()
 
     delta = time.time() - start
     overall_bps = (total / delta) if delta > 0 else 0.0
