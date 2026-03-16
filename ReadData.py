@@ -92,6 +92,16 @@ def summarize_axis(
     print(f"{axis_name} high-value alerts ({len(anomalies)}): {preview_text}")
 
 
+def summarize_series(values: Sequence[int]) -> tuple[float, float, float, int, int]:
+    if not values:
+        return 0.0, 0.0, 0.0, 0, 0
+
+    mean_value = statistics.fmean(values)
+    median_value = statistics.median(values)
+    std_value = statistics.pstdev(values) if len(values) > 1 else 0.0
+    return mean_value, median_value, std_value, min(values), max(values)
+
+
 def parse_file(
     path: Path,
     preview: int,
@@ -175,6 +185,19 @@ def parse_file(
 
     track_values, offset = read_i16_array(
         data, offset, sample_size2, "Track_return_voltage list"
+    )
+    (
+        track_mean,
+        track_median,
+        track_std,
+        track_min,
+        track_max,
+    ) = summarize_series(track_values)
+    non_zero_count = sum(1 for value in track_values if value != 0)
+    print(
+        "Track_return_voltage statistics: "
+        f"mean={track_mean:.3f}, median={track_median:.3f}, std={track_std:.3f}, "
+        f"min={track_min}, max={track_max}, non-zero={non_zero_count}/{len(track_values)}"
     )
     print(f"Track_return_voltage list ({len(track_values)}):")
     print(format_preview(track_values, preview, full))
