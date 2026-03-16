@@ -110,8 +110,8 @@ h2 {
 
 .preflight-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 430px);
+  gap: 18px;
   align-items: center;
   min-height: calc(100vh - 32px);
   padding: clamp(28px, 5vw, 56px);
@@ -133,6 +133,10 @@ h2 {
   font-size: clamp(1rem, 1.6vw, 1.18rem);
   line-height: 1.8;
   color: #46607a;
+}
+
+.preflight-copy-line {
+  display: block;
 }
 
 .confirm-button {
@@ -171,8 +175,11 @@ h2 {
 .wifi-ready-pane {
   display: grid;
   justify-items: stretch;
+  align-content: start;
   gap: 12px;
   align-self: center;
+  min-height: 420px;
+  margin-left: -18px;
   padding: 18px;
   border-radius: 20px;
   border: 1px solid rgba(104, 136, 168, 0.18);
@@ -272,10 +279,11 @@ h2 {
 
 .wifi-ready-signal {
   flex: 0 0 auto;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.01em;
-  color: rgba(27, 64, 96, 0.9);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(27, 64, 96, 0.78);
 }
 
 .wifi-connect-form {
@@ -462,6 +470,11 @@ h2 {
   .preflight-card {
     grid-template-columns: 1fr;
     align-items: start;
+  }
+
+  .wifi-ready-pane {
+    margin-left: 0;
+    min-height: 0;
   }
 
   .wifi-ready-pane {

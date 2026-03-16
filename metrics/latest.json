@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-16T01:40:37.900Z",
-  "headCommit": "a98d0ee7cbb94f454ef418abaaeae0be621de3c5",
+  "timestamp": "2026-03-16T01:52:53.923Z",
+  "headCommit": "c36b80659aa8d0feadb5c1977c416a41704625ea",
   "baselines": {
     "projectBaselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
     "trackingStartCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
@@ -8,32 +8,32 @@
   },
   "projectTotals": {
     "baselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
-    "changedFiles": 25,
-    "writtenLines": 6755,
-    "deletedLines": 74,
-    "changeLines": 6829,
-    "totalCommitCount": 38,
-    "featureCommitCount": 20,
+    "changedFiles": 27,
+    "writtenLines": 6774,
+    "deletedLines": 96,
+    "changeLines": 6870,
+    "totalCommitCount": 39,
+    "featureCommitCount": 21,
     "adjustmentCommitCount": 14
   },
   "trackingTotals": {
     "baselineCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
-    "changedFiles": 16,
-    "writtenLines": 3756,
-    "deletedLines": 27,
-    "changeLines": 3783,
-    "totalCommitCount": 19,
-    "featureCommitCount": 10,
+    "changedFiles": 18,
+    "writtenLines": 3775,
+    "deletedLines": 49,
+    "changeLines": 3824,
+    "totalCommitCount": 20,
+    "featureCommitCount": 11,
     "adjustmentCommitCount": 7
   },
   "currentTotals": {
-    "totalLines": 6796,
+    "totalLines": 6793,
     "sourceFileCount": 20
   },
   "majorSourceFiles": [
     {
       "file": "src/renderer/shell.js",
-      "lines": 1813
+      "lines": 1796
     },
     {
       "file": "src/renderer/filetransfer-content.css",
@@ -48,12 +48,12 @@
       "lines": 531
     },
     {
-      "file": "udp_file_client.py",
-      "lines": 498
+      "file": "src/renderer/shell.css",
+      "lines": 502
     },
     {
-      "file": "src/renderer/shell.css",
-      "lines": 489
+      "file": "udp_file_client.py",
+      "lines": 498
     },
     {
       "file": "tools/code-metrics.js",
@@ -119,7 +119,7 @@
     },
     {
       "file": "src/renderer/filetransfer.html",
-      "lines": 105
+      "lines": 106
     },
     {
       "file": "src/renderer/info.css",
@@ -131,7 +131,7 @@
     },
     {
       "file": "src/renderer/shell.css",
-      "lines": 489
+      "lines": 502
     },
     {
       "file": "src/renderer/shell.html",
@@ -139,7 +139,7 @@
     },
     {
       "file": "src/renderer/shell.js",
-      "lines": 1813
+      "lines": 1796
     },
     {
       "file": "src/shared/ipc.js",

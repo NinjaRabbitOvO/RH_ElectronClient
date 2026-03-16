@@ -156,23 +156,6 @@ function setWifiReadyStatus(text, tone = "") {
   wifiReadyStatus.classList.toggle("is-error", tone === "error");
 }
 
-function toWifiSignalDb(value) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) {
-    return null;
-  }
-  const clamped = Math.max(0, Math.min(100, numeric));
-  return Math.round(clamped / 2 - 100);
-}
-
-function formatWifiSignalLabel(network) {
-  const db = toWifiSignalDb(network && network.signal);
-  if (db === null) {
-    return "N/A dB";
-  }
-  return `${db} dB`;
-}
-
 function setWifiInputControlsDisabled(disabled) {
   const isDisabled = Boolean(disabled);
   if (wifiPasswordInput) {
@@ -253,7 +236,7 @@ function createWifiReadyCard(network, options = {}) {
 
   const signal = document.createElement("span");
   signal.className = "wifi-ready-signal";
-  signal.textContent = formatWifiSignalLabel(network);
+  signal.textContent = selected ? "Previous" : "";
 
   button.append(icon, label, signal);
   if (typeof onClick === "function") {
@@ -459,7 +442,7 @@ async function scanReadyCheckWifi(options = {}) {
       const networkHint =
         networkCount > 1
           ? `Detected ${networkCount} ESP networks. Click one of the green cards to continue.`
-          : `Detected ${wifiReadySsid} (${formatWifiSignalLabel(bestNetwork)}).`;
+          : `Detected ${wifiReadySsid}.`;
       setWifiReadyStatus(
         `${prefix}${networkHint} Click to choose network and connect.`,
         "success",
