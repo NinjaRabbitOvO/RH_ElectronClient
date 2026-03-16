@@ -172,6 +172,13 @@ h2 {
   transform: translateY(0);
 }
 
+.confirm-button.is-disabled {
+  opacity: 0.58;
+  filter: grayscale(0.2);
+  pointer-events: none;
+  box-shadow: none;
+}
+
 .wifi-ready-pane {
   display: grid;
   justify-items: stretch;
@@ -269,21 +276,13 @@ h2 {
 }
 
 .wifi-ready-name {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-align: left;
-}
-
-.wifi-ready-signal {
-  flex: 0 0 auto;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(27, 64, 96, 0.78);
+  text-align: center;
 }
 
 .wifi-connect-form {

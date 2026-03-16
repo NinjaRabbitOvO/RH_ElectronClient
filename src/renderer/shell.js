@@ -37,6 +37,7 @@ const wifiReadyButton = document.getElementById("wifi-ready-button");
 const wifiReadyList = document.getElementById("wifi-ready-list");
 const wifiReadyLabel = document.getElementById("wifi-ready-label");
 const wifiReadyStatus = document.getElementById("wifi-ready-status");
+const readyConfirmButton = document.getElementById("ready-confirm-button");
 const wifiConnectForm = document.getElementById("wifi-connect-form");
 const wifiPasswordInput = document.getElementById("wifi-password-input");
 const wifiConnectSubmit = document.getElementById("wifi-connect-submit");
@@ -118,6 +119,7 @@ let wifiReadyScanTimer = 0;
 let wifiReadySsid = "";
 let wifiReadyNetworks = [];
 let wifiReadySelectionLocked = false;
+let wifiReadyConnected = false;
 let wifiReadyScanning = false;
 let wifiReadyConnecting = false;
 const TRANSFER_FAILURE_NOTE =
@@ -154,6 +156,16 @@ function setWifiReadyStatus(text, tone = "") {
   wifiReadyStatus.textContent = text || "";
   wifiReadyStatus.classList.toggle("is-success", tone === "success");
   wifiReadyStatus.classList.toggle("is-error", tone === "error");
+}
+
+function setReadyConfirmState(connected) {
+  if (!readyConfirmButton) {
+    return;
+  }
+
+  const enabled = Boolean(connected);
+  readyConfirmButton.classList.toggle("is-disabled", !enabled);
+  readyConfirmButton.setAttribute("aria-disabled", enabled ? "false" : "true");
 }
 
 function setWifiInputControlsDisabled(disabled) {
@@ -234,11 +246,7 @@ function createWifiReadyCard(network, options = {}) {
     label.textContent = network.ssid;
   }
 
-  const signal = document.createElement("span");
-  signal.className = "wifi-ready-signal";
-  signal.textContent = selected ? "Previous" : "";
-
-  button.append(icon, label, signal);
+  button.append(icon, label);
   if (typeof onClick === "function") {
     button.addEventListener("click", onClick);
   }
@@ -281,8 +289,13 @@ function renderWifiReadyCards(options = {}) {
       connecting,
       connected,
       onClick: () => {
+        const changed = wifiReadySsid !== network.ssid;
         wifiReadySsid = network.ssid;
         wifiReadySelectionLocked = true;
+        if (changed || !wifiReadyConnected) {
+          wifiReadyConnected = false;
+          setReadyConfirmState(false);
+        }
         renderWifiReadyCards({
           showScanning: false,
           disabled: false,
@@ -416,11 +429,15 @@ async function scanReadyCheckWifi(options = {}) {
     if (wifiReadySsid && !wifiReadyNetworks.some((item) => item.ssid === wifiReadySsid)) {
       wifiReadySsid = "";
       wifiReadySelectionLocked = false;
+      wifiReadyConnected = false;
+      setReadyConfirmState(false);
     }
 
     if (!wifiReadySsid && wifiReadyNetworks.length) {
       wifiReadySsid = wifiReadyNetworks[0].ssid;
       wifiReadySelectionLocked = false;
+      wifiReadyConnected = false;
+      setReadyConfirmState(false);
     }
 
     const bestNetwork = wifiReadyNetworks.find((item) => item.ssid === wifiReadySsid)
@@ -467,6 +484,8 @@ async function scanReadyCheckWifi(options = {}) {
     }
 
     wifiReadyNetworks = [];
+    wifiReadyConnected = false;
+    setReadyConfirmState(false);
     hideWifiConnectForm();
     renderWifiReadyCards({
       showScanning: true,
@@ -494,6 +513,8 @@ async function scanReadyCheckWifi(options = {}) {
     }
 
     wifiReadyNetworks = [];
+    wifiReadyConnected = false;
+    setReadyConfirmState(false);
     renderWifiReadyCards({
       showScanning: true,
       scanningLabel: "Scan Failed - Retry",
@@ -528,6 +549,8 @@ async function connectReadyWifi(options = {}) {
   }
 
   wifiReadyConnecting = true;
+  wifiReadyConnected = false;
+  setReadyConfirmState(false);
   setWifiInputControlsDisabled(true);
   renderWifiReadyCards({
     showScanning: false,
@@ -549,6 +572,8 @@ async function connectReadyWifi(options = {}) {
 
     if (!result || !result.ok) {
       const errorText = result && result.error ? result.error : "Wi-Fi connection failed.";
+      wifiReadyConnected = false;
+      setReadyConfirmState(false);
       renderWifiReadyCards({
         showScanning: false,
         disabled: false,
@@ -561,6 +586,8 @@ async function connectReadyWifi(options = {}) {
 
     hideWifiConnectForm();
     wifiPasswordInput.value = "";
+    wifiReadyConnected = true;
+    setReadyConfirmState(true);
     renderWifiReadyCards({
       showScanning: false,
       disabled: false,
@@ -570,6 +597,8 @@ async function connectReadyWifi(options = {}) {
     setWifiReadyStatus(result.message || `Connected to ${wifiReadySsid}.`, "success");
   } catch (error) {
     console.error(error);
+    wifiReadyConnected = false;
+    setReadyConfirmState(false);
     renderWifiReadyCards({
       showScanning: !wifiReadySsid,
       scanningLabel: wifiReadySsid ? "Scanning Wi-Fi..." : "Scan Wi-Fi",
@@ -591,6 +620,8 @@ function bindReadyCheckWifi() {
   if (!wifiReadyButton || !wifiReadyLabel || !wifiReadyStatus) {
     return;
   }
+
+  setReadyConfirmState(false);
 
   wifiReadyButton.addEventListener("click", () => {
     if (!wifiReadySsid) {
@@ -619,6 +650,15 @@ function bindReadyCheckWifi() {
   if (wifiConnectSaved) {
     wifiConnectSaved.addEventListener("click", () => {
       void connectReadyWifi({ useSavedProfile: true });
+    });
+  }
+
+  if (readyConfirmButton) {
+    readyConfirmButton.addEventListener("click", (event) => {
+      if (readyConfirmButton.getAttribute("aria-disabled") === "true") {
+        event.preventDefault();
+        setWifiReadyStatus("Please connect to a nearby ESP Wi-Fi successfully before confirming.", "error");
+      }
     });
   }
 
