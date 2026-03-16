@@ -7,6 +7,7 @@ const {
   runPythonTransfer,
   runUdpTransfer,
 } = require("./services/filetransfer");
+const { connectEspWifi, scanEspWifiNetworks } = require("./services/wifi");
 
 function registerIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.ping, () => "pong");
@@ -15,6 +16,12 @@ function registerIpcHandlers() {
   });
   ipcMain.handle(IPC_CHANNELS.startUdpTransfer, async (event, dateText) => {
     return runUdpTransfer(event.sender, dateText);
+  });
+  ipcMain.handle(IPC_CHANNELS.scanWifiNetworks, async () => {
+    return scanEspWifiNetworks();
+  });
+  ipcMain.handle(IPC_CHANNELS.connectWifiNetwork, async (_event, request) => {
+    return connectEspWifi(request);
   });
   ipcMain.handle(IPC_CHANNELS.listReceivedTransfers, async () => {
     return listReceivedTransfers();

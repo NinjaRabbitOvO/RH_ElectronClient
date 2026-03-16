@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-16T00:32:00.945Z",
-  "headCommit": "8b74c91338c43eff66d8e24549369b267593e9f5",
+  "timestamp": "2026-03-16T01:23:46.400Z",
+  "headCommit": "0ddd7739ca2e70ecce7521e3eecf4dd3b76f9242",
   "baselines": {
     "projectBaselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
     "trackingStartCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
@@ -8,36 +8,40 @@
   },
   "projectTotals": {
     "baselineCommit": "03c9e84f42bf8999f375a64e7a05727c3ab7c5e6",
-    "changedFiles": 24,
-    "writtenLines": 5382,
-    "deletedLines": 71,
-    "changeLines": 5453,
-    "totalCommitCount": 36,
-    "featureCommitCount": 18,
+    "changedFiles": 30,
+    "writtenLines": 6738,
+    "deletedLines": 82,
+    "changeLines": 6820,
+    "totalCommitCount": 37,
+    "featureCommitCount": 19,
     "adjustmentCommitCount": 14
   },
   "trackingTotals": {
     "baselineCommit": "be4302b96140631ce71fb6b34626d018bf9bc35b",
-    "changedFiles": 13,
-    "writtenLines": 2372,
-    "deletedLines": 13,
-    "changeLines": 2385,
-    "totalCommitCount": 17,
-    "featureCommitCount": 8,
+    "changedFiles": 19,
+    "writtenLines": 3728,
+    "deletedLines": 24,
+    "changeLines": 3752,
+    "totalCommitCount": 18,
+    "featureCommitCount": 9,
     "adjustmentCommitCount": 7
   },
   "currentTotals": {
-    "totalLines": 5426,
-    "sourceFileCount": 19
+    "totalLines": 6771,
+    "sourceFileCount": 20
   },
   "majorSourceFiles": [
     {
       "file": "src/renderer/shell.js",
-      "lines": 1295
+      "lines": 1788
     },
     {
       "file": "src/renderer/filetransfer-content.css",
       "lines": 913
+    },
+    {
+      "file": "src/main/services/wifi.js",
+      "lines": 542
     },
     {
       "file": "src/main/services/filetransfer.js",
@@ -46,6 +50,10 @@
     {
       "file": "udp_file_client.py",
       "lines": 498
+    },
+    {
+      "file": "src/renderer/shell.css",
+      "lines": 489
     },
     {
       "file": "tools/code-metrics.js",
@@ -60,16 +68,8 @@
       "lines": 265
     },
     {
-      "file": "src/renderer/shell.css",
-      "lines": 246
-    },
-    {
       "file": "src/renderer/info.css",
       "lines": 242
-    },
-    {
-      "file": "PlusWifi_Client.py",
-      "lines": 214
     }
   ],
   "sourceFileBreakdown": [
@@ -91,11 +91,15 @@
     },
     {
       "file": "src/main/ipc.js",
-      "lines": 29
+      "lines": 36
     },
     {
       "file": "src/main/services/filetransfer.js",
       "lines": 531
+    },
+    {
+      "file": "src/main/services/wifi.js",
+      "lines": 542
     },
     {
       "file": "src/main/windows/main-window.js",
@@ -103,7 +107,7 @@
     },
     {
       "file": "src/preload/index.js",
-      "lines": 48
+      "lines": 56
     },
     {
       "file": "src/renderer/filetransfer-content.css",
@@ -115,7 +119,7 @@
     },
     {
       "file": "src/renderer/filetransfer.html",
-      "lines": 55
+      "lines": 105
     },
     {
       "file": "src/renderer/info.css",
@@ -127,7 +131,7 @@
     },
     {
       "file": "src/renderer/shell.css",
-      "lines": 246
+      "lines": 489
     },
     {
       "file": "src/renderer/shell.html",
@@ -135,11 +139,11 @@
     },
     {
       "file": "src/renderer/shell.js",
-      "lines": 1295
+      "lines": 1788
     },
     {
       "file": "src/shared/ipc.js",
-      "lines": 12
+      "lines": 14
     },
     {
       "file": "tools/code-metrics.js",

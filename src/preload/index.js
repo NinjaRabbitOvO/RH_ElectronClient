@@ -5,6 +5,8 @@ const { contextBridge, ipcRenderer } = require("electron");
 const IPC_CHANNELS = {
   startFileTransfer: "app:start-file-transfer",
   startUdpTransfer: "app:start-udp-transfer",
+  scanWifiNetworks: "app:scan-wifi-networks",
+  connectWifiNetwork: "app:connect-wifi-network",
   listReceivedTransfers: "app:list-received-transfers",
   readReceivedDatFile: "app:read-received-dat-file",
   transferEvent: "app:transfer-event",
@@ -29,6 +31,12 @@ contextBridge.exposeInMainWorld("appApi", {
     },
     startUdp(dateText) {
       return ipcRenderer.invoke(IPC_CHANNELS.startUdpTransfer, dateText);
+    },
+    scanWifi() {
+      return ipcRenderer.invoke(IPC_CHANNELS.scanWifiNetworks);
+    },
+    connectWifi(request) {
+      return ipcRenderer.invoke(IPC_CHANNELS.connectWifiNetwork, request);
     },
     listReceived() {
       return ipcRenderer.invoke(IPC_CHANNELS.listReceivedTransfers);

@@ -33,6 +33,14 @@ const receivedFolderTitle = document.getElementById("received-folder-title");
 const receivedFolderSummary = document.getElementById("received-folder-summary");
 const receivedFolderList = document.getElementById("received-folder-list");
 const receivedFileViewer = document.getElementById("received-file-viewer");
+const wifiReadyButton = document.getElementById("wifi-ready-button");
+const wifiReadyList = document.getElementById("wifi-ready-list");
+const wifiReadyLabel = document.getElementById("wifi-ready-label");
+const wifiReadyStatus = document.getElementById("wifi-ready-status");
+const wifiConnectForm = document.getElementById("wifi-connect-form");
+const wifiPasswordInput = document.getElementById("wifi-password-input");
+const wifiConnectSubmit = document.getElementById("wifi-connect-submit");
+const wifiConnectSaved = document.getElementById("wifi-connect-saved");
 const TRANSFER_EVENT_PREFIX = "@@EVENT@@ ";
 const filetransferApi =
   window.appApi && window.appApi.filetransfer ? window.appApi.filetransfer : null;
@@ -106,6 +114,11 @@ let receivedTransferFolders = [];
 let activeReceivedFolder = "";
 let activeReceivedFileName = "";
 let receivedViewerRequestId = 0;
+let wifiReadyScanTimer = 0;
+let wifiReadySsid = "";
+let wifiReadyNetworks = [];
+let wifiReadyScanning = false;
+let wifiReadyConnecting = false;
 const TRANSFER_FAILURE_NOTE =
   "Please verify that you are connected to a nearby device via Wi-Fi, then restart the transfer.";
 
@@ -130,6 +143,485 @@ function bindHomeWebview() {
   homeWebview.addEventListener("did-fail-load", () => {
     console.error("Google page could not be loaded in the embedded view.");
   });
+}
+
+function setWifiReadyStatus(text, tone = "") {
+  if (!wifiReadyStatus) {
+    return;
+  }
+
+  wifiReadyStatus.textContent = text || "";
+  wifiReadyStatus.classList.toggle("is-success", tone === "success");
+  wifiReadyStatus.classList.toggle("is-error", tone === "error");
+}
+
+function setWifiInputControlsDisabled(disabled) {
+  const isDisabled = Boolean(disabled);
+  if (wifiPasswordInput) {
+    wifiPasswordInput.disabled = isDisabled;
+  }
+  if (wifiConnectSubmit) {
+    wifiConnectSubmit.disabled = isDisabled;
+  }
+  if (wifiConnectSaved) {
+    wifiConnectSaved.disabled = isDisabled;
+  }
+}
+
+function setWifiReadyButton(options) {
+  if (!wifiReadyButton || !wifiReadyLabel) {
+    return;
+  }
+
+  const {
+    label = "Scanning Wi-Fi...",
+    found = false,
+    pulsing = false,
+    connecting = false,
+    connected = false,
+    disabled = false,
+  } = options || {};
+
+  wifiReadyLabel.textContent = label;
+  wifiReadyButton.disabled = Boolean(disabled);
+  wifiReadyButton.classList.toggle("is-found", Boolean(found));
+  wifiReadyButton.classList.toggle("is-pulsing", Boolean(pulsing));
+  wifiReadyButton.classList.toggle("is-connecting", Boolean(connecting));
+  wifiReadyButton.classList.toggle("is-connected", Boolean(connected));
+}
+
+function createWifiReadyCard(network, options = {}) {
+  const {
+    selected = false,
+    disabled = false,
+    connecting = false,
+    connected = false,
+    onClick = null,
+  } = options;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "wifi-ready-button";
+  button.disabled = Boolean(disabled);
+  button.setAttribute("aria-expanded", selected && wifiConnectForm && !wifiConnectForm.hidden ? "true" : "false");
+
+  if (connected && selected) {
+    button.classList.add("is-connected", "is-active");
+  } else if (connecting && selected) {
+    button.classList.add("is-connecting", "is-active");
+  } else {
+    button.classList.add("is-found", "is-pulsing");
+    if (selected) {
+      button.classList.add("is-active");
+    }
+  }
+
+  const icon = document.createElement("span");
+  icon.className = "wifi-ready-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.innerHTML =
+    '<svg viewBox="0 0 24 24"><path d="M2.2 8.8a15.3 15.3 0 0 1 19.6 0" /><path d="M5.9 12.5a10 10 0 0 1 12.2 0" /><path d="M9.6 16.2a4.7 4.7 0 0 1 4.8 0" /><circle cx="12" cy="19.3" r="1.3" /></svg>';
+
+  const label = document.createElement("span");
+  label.className = "wifi-ready-name";
+  if (connecting && selected) {
+    label.textContent = `Connecting ${network.ssid}...`;
+  } else {
+    label.textContent = network.ssid;
+  }
+
+  const signal = document.createElement("span");
+  signal.className = "wifi-ready-signal";
+  signal.textContent = `${network.signal || 0}%`;
+
+  button.append(icon, label, signal);
+  if (typeof onClick === "function") {
+    button.addEventListener("click", onClick);
+  }
+
+  return button;
+}
+
+function renderWifiReadyCards(options = {}) {
+  if (!wifiReadyList || !wifiReadyButton || !wifiReadyLabel) {
+    return;
+  }
+
+  const {
+    showScanning = false,
+    scanningLabel = "Scanning Wi-Fi...",
+    disabled = false,
+    connecting = false,
+    connected = false,
+  } = options;
+
+  if (showScanning || !Array.isArray(wifiReadyNetworks) || !wifiReadyNetworks.length) {
+    wifiReadyList.replaceChildren(wifiReadyButton);
+    setWifiReadyButton({
+      label: scanningLabel,
+      found: false,
+      pulsing: false,
+      connecting: false,
+      connected: false,
+      disabled,
+    });
+    return;
+  }
+
+  const cards = [];
+  wifiReadyNetworks.forEach((network) => {
+    const isSelected = network.ssid === wifiReadySsid;
+    const card = createWifiReadyCard(network, {
+      selected: isSelected,
+      disabled,
+      connecting,
+      connected,
+      onClick: () => {
+        wifiReadySsid = network.ssid;
+        renderWifiReadyCards({
+          showScanning: false,
+          disabled: false,
+          connecting: false,
+          connected: false,
+        });
+        if (wifiConnectForm && wifiConnectForm.hidden) {
+          showWifiConnectForm();
+        }
+        setWifiReadyStatus(
+          `Selected ${wifiReadySsid}. Enter password, or click Use Saved to connect with stored credentials.`,
+        );
+      },
+    });
+    cards.push(card);
+  });
+
+  wifiReadyList.replaceChildren(...cards);
+}
+
+function scheduleWifiScan(delayMs = 5000) {
+  if (wifiReadyScanTimer) {
+    window.clearTimeout(wifiReadyScanTimer);
+  }
+
+  wifiReadyScanTimer = window.setTimeout(() => {
+    void scanReadyCheckWifi({ silent: true });
+  }, delayMs);
+}
+
+function hideWifiConnectForm() {
+  if (!wifiConnectForm || !wifiReadyButton) {
+    return;
+  }
+
+  wifiConnectForm.hidden = true;
+  wifiReadyButton.setAttribute("aria-expanded", "false");
+}
+
+function showWifiConnectForm() {
+  if (!wifiConnectForm || !wifiReadyButton) {
+    return;
+  }
+
+  renderWifiReadyCards({
+    showScanning: false,
+    disabled: false,
+    connecting: wifiReadyConnecting,
+    connected: false,
+  });
+  wifiConnectForm.hidden = false;
+  wifiReadyButton.setAttribute("aria-expanded", "true");
+  if (wifiPasswordInput) {
+    wifiPasswordInput.focus();
+  }
+}
+
+async function scanReadyCheckWifi(options = {}) {
+  if (!wifiReadyButton || !wifiReadyLabel || !wifiReadyStatus) {
+    return;
+  }
+
+  if (wifiReadyScanning || wifiReadyConnecting) {
+    return;
+  }
+
+  const { silent = false } = options;
+  wifiReadyScanning = true;
+
+  if (!silent) {
+    renderWifiReadyCards({
+      showScanning: true,
+      scanningLabel: "Scanning Wi-Fi...",
+      disabled: true,
+    });
+    setWifiReadyStatus("Scanning for nearby ESP-* networks...");
+  }
+
+  if (!filetransferApi || typeof filetransferApi.scanWifi !== "function") {
+    renderWifiReadyCards({
+      showScanning: true,
+      scanningLabel: "Wi-Fi API Unavailable",
+      disabled: true,
+    });
+    setWifiReadyStatus("Renderer could not access Wi-Fi API. Please restart the app.", "error");
+    wifiReadyScanning = false;
+    return;
+  }
+
+  try {
+    const result = await filetransferApi.scanWifi();
+
+    if (!result || !result.ok) {
+      const errorText = result && result.error ? result.error : "Unable to scan Wi-Fi networks.";
+      const hasLastKnown = Boolean(wifiReadySsid);
+      wifiReadyNetworks = hasLastKnown
+        ? [{ ssid: wifiReadySsid, signal: 0, stale: true }]
+        : [];
+
+      if (hasLastKnown) {
+        renderWifiReadyCards({
+          showScanning: false,
+          disabled: false,
+          connecting: false,
+          connected: false,
+        });
+        setWifiReadyStatus(
+          `Using last detected ${wifiReadySsid}. Scan warning: ${errorText}`,
+          "error",
+        );
+        scheduleWifiScan(7000);
+        return;
+      }
+
+      renderWifiReadyCards({
+        showScanning: true,
+        scanningLabel: "Scan Failed - Retry",
+        disabled: false,
+      });
+      setWifiReadyStatus(errorText, "error");
+      scheduleWifiScan(7000);
+      return;
+    }
+
+    const networkCandidates = Array.isArray(result.networks)
+      ? result.networks.filter((network) => network && network.ssid)
+      : [];
+    wifiReadyNetworks = networkCandidates;
+
+    if (wifiReadySsid && !wifiReadyNetworks.some((item) => item.ssid === wifiReadySsid)) {
+      wifiReadySsid = "";
+    }
+
+    if (!wifiReadySsid && wifiReadyNetworks.length) {
+      wifiReadySsid = wifiReadyNetworks[0].ssid;
+    }
+
+    const bestNetwork = wifiReadyNetworks.find((item) => item.ssid === wifiReadySsid)
+      || wifiReadyNetworks[0]
+      || null;
+
+    if (bestNetwork) {
+      renderWifiReadyCards({
+        showScanning: false,
+        disabled: false,
+        connecting: false,
+        connected: false,
+      });
+
+      const prefix = result.requestedEnable
+        ? "Wi-Fi adapter enabled. "
+        : "";
+      const networkCount = wifiReadyNetworks.length;
+      const networkHint =
+        networkCount > 1
+          ? `Detected ${networkCount} ESP networks. Click one of the green cards to continue.`
+          : `Detected ${wifiReadySsid} (${bestNetwork.signal || 0}%).`;
+      setWifiReadyStatus(
+        `${prefix}${networkHint} Click to choose network and connect.`,
+        "success",
+      );
+      scheduleWifiScan(12000);
+      return;
+    }
+
+    if (wifiReadySsid) {
+      wifiReadyNetworks = [{ ssid: wifiReadySsid, signal: 0, stale: true }];
+      renderWifiReadyCards({
+        showScanning: false,
+        disabled: false,
+        connecting: false,
+        connected: false,
+      });
+      setWifiReadyStatus(
+        `No ESP network in this scan. Keeping last detected ${wifiReadySsid}.`,
+      );
+      scheduleWifiScan(5000);
+      return;
+    }
+
+    wifiReadyNetworks = [];
+    hideWifiConnectForm();
+    renderWifiReadyCards({
+      showScanning: true,
+      scanningLabel: "Scanning Wi-Fi...",
+      disabled: false,
+    });
+    setWifiReadyStatus("No ESP-* network found yet. Keep the device nearby and wait for refresh.");
+    scheduleWifiScan(5000);
+  } catch (error) {
+    console.error(error);
+    if (wifiReadySsid) {
+      wifiReadyNetworks = [{ ssid: wifiReadySsid, signal: 0, stale: true }];
+      renderWifiReadyCards({
+        showScanning: false,
+        disabled: false,
+        connecting: false,
+        connected: false,
+      });
+      setWifiReadyStatus(
+        `Scan exception; keeping ${wifiReadySsid}. ${error && error.message ? error.message : ""}`,
+        "error",
+      );
+      scheduleWifiScan(7000);
+      return;
+    }
+
+    wifiReadyNetworks = [];
+    renderWifiReadyCards({
+      showScanning: true,
+      scanningLabel: "Scan Failed - Retry",
+      disabled: false,
+    });
+    setWifiReadyStatus(
+      error && error.message ? error.message : "Wi-Fi scan failed unexpectedly.",
+      "error",
+    );
+    scheduleWifiScan(7000);
+  } finally {
+    wifiReadyScanning = false;
+  }
+}
+
+async function connectReadyWifi(options = {}) {
+  if (!wifiReadySsid) {
+    setWifiReadyStatus("Please wait until an ESP-* network is detected.", "error");
+    return;
+  }
+
+  if (!wifiPasswordInput) {
+    return;
+  }
+
+  const { useSavedProfile = false } = options;
+  const password = useSavedProfile ? "" : wifiPasswordInput.value.trim();
+
+  if (!filetransferApi || typeof filetransferApi.connectWifi !== "function") {
+    setWifiReadyStatus("Wi-Fi connect API is unavailable. Restart the app and try again.", "error");
+    return;
+  }
+
+  wifiReadyConnecting = true;
+  setWifiInputControlsDisabled(true);
+  renderWifiReadyCards({
+    showScanning: false,
+    disabled: true,
+    connecting: true,
+    connected: false,
+  });
+  if (useSavedProfile || !password) {
+    setWifiReadyStatus(`Trying saved profile for ${wifiReadySsid}...`);
+  } else {
+    setWifiReadyStatus(`Trying to connect to ${wifiReadySsid}...`);
+  }
+
+  try {
+    const result = await filetransferApi.connectWifi({
+      ssid: wifiReadySsid,
+      password,
+    });
+
+    if (!result || !result.ok) {
+      const errorText = result && result.error ? result.error : "Wi-Fi connection failed.";
+      renderWifiReadyCards({
+        showScanning: false,
+        disabled: false,
+        connecting: false,
+        connected: false,
+      });
+      setWifiReadyStatus(errorText, "error");
+      return;
+    }
+
+    hideWifiConnectForm();
+    wifiPasswordInput.value = "";
+    renderWifiReadyCards({
+      showScanning: false,
+      disabled: false,
+      connecting: false,
+      connected: true,
+    });
+    setWifiReadyStatus(result.message || `Connected to ${wifiReadySsid}.`, "success");
+  } catch (error) {
+    console.error(error);
+    renderWifiReadyCards({
+      showScanning: !wifiReadySsid,
+      scanningLabel: wifiReadySsid ? "Scanning Wi-Fi..." : "Scan Wi-Fi",
+      disabled: false,
+      connecting: false,
+      connected: false,
+    });
+    setWifiReadyStatus(
+      error && error.message ? error.message : "Wi-Fi connection failed unexpectedly.",
+      "error",
+    );
+  } finally {
+    wifiReadyConnecting = false;
+    setWifiInputControlsDisabled(false);
+  }
+}
+
+function bindReadyCheckWifi() {
+  if (!wifiReadyButton || !wifiReadyLabel || !wifiReadyStatus) {
+    return;
+  }
+
+  wifiReadyButton.addEventListener("click", () => {
+    if (!wifiReadySsid) {
+      void scanReadyCheckWifi();
+      return;
+    }
+
+    if (!wifiConnectForm) {
+      return;
+    }
+
+    if (wifiConnectForm.hidden) {
+      showWifiConnectForm();
+    } else {
+      hideWifiConnectForm();
+    }
+  });
+
+  if (wifiConnectForm) {
+    wifiConnectForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void connectReadyWifi({ useSavedProfile: false });
+    });
+  }
+
+  if (wifiConnectSaved) {
+    wifiConnectSaved.addEventListener("click", () => {
+      void connectReadyWifi({ useSavedProfile: true });
+    });
+  }
+
+  window.addEventListener("beforeunload", () => {
+    if (wifiReadyScanTimer) {
+      window.clearTimeout(wifiReadyScanTimer);
+      wifiReadyScanTimer = 0;
+    }
+  });
+
+  void scanReadyCheckWifi();
 }
 
 function renderMetricValue(id, value) {
@@ -1292,4 +1784,5 @@ function bindTransferLauncher() {
 
 renderActiveNavigation();
 bindHomeWebview();
+bindReadyCheckWifi();
 bindTransferLauncher();
