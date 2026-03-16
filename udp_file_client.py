@@ -34,12 +34,33 @@ GET_REQ_LEN = 28
 DEFAULT_PORT = 6000
 PROGRESS_BAR_WIDTH = 30
 PROGRESS_REFRESH_SEC = 0.2
+DEFAULT_WIFI_NAME = "ESP32-S3"
+ERR_TRANSFER_BUSY = 0x0005
+GET_FILE_MAX_ATTEMPTS = 20
+GET_FILE_BUSY_RETRY_BASE_SEC = 0.4
+GET_FILE_BUSY_RETRY_MAX_SEC = 2.0
 
 
 def emit_event(event_type: str, **payload):
     message = {"type": event_type}
     message.update(payload)
     print(f"@@EVENT@@ {json.dumps(message, ensure_ascii=True)}", flush=True)
+
+
+def sanitize_wifi_name(value: str) -> str:
+    raw = (value or "").strip() or DEFAULT_WIFI_NAME
+    safe = "".join(
+        "_" if (ord(ch) < 32 or ch in '<>:"/\\|?*') else ch
+        for ch in raw
+    )
+    safe = "_".join(part for part in safe.split())
+    safe = safe.strip("_")
+    return safe or DEFAULT_WIFI_NAME
+
+
+def build_output_folder(root_dir: str, date_code: str, wifi_name: str) -> str:
+    safe_wifi = sanitize_wifi_name(wifi_name)
+    return os.path.join(root_dir, f"{safe_wifi}_Re{date_code}")
 
 
 def format_units(value: float, unit_base: int = 1024) -> Tuple[float, str]:
@@ -254,20 +275,41 @@ def get_file(sock: socket.socket, addr: Tuple[str, int], session_id: int,
     hdr = None
     resp = b""
     get_ack_attempts = 0
-    for _ in range(5):
+    last_error = None
+    for attempt in range(1, GET_FILE_MAX_ATTEMPTS + 1):
         get_ack_attempts += 1
         send_packet(sock, addr, MSG_GET_FILE_REQ, session_id, payload=bytes(payload))
         try:
             hdr, resp = recv_packet(sock, timeout=2.5)
         except TimeoutError:
             continue
-        if hdr["msg_type"] == MSG_GET_FILE_ACK or hdr["msg_type"] == MSG_ERROR:
+        if hdr["msg_type"] == MSG_GET_FILE_ACK:
             break
+        if hdr["msg_type"] == MSG_ERROR:
+            code, msg = parse_error(resp)
+            last_error = (code, msg)
+            if code == ERR_TRANSFER_BUSY and attempt < GET_FILE_MAX_ATTEMPTS:
+                retry_delay = min(
+                    GET_FILE_BUSY_RETRY_BASE_SEC * attempt,
+                    GET_FILE_BUSY_RETRY_MAX_SEC,
+                )
+                print(
+                    f"GET_FILE busy for {name}.dat "
+                    f"(attempt {attempt}/{GET_FILE_MAX_ATTEMPTS}), "
+                    f"retrying in {retry_delay:.1f}s...",
+                )
+                time.sleep(retry_delay)
+                hdr = None
+                continue
+            raise RuntimeError(f"GET_FILE error: code=0x{code:04X} {msg}")
+        hdr = None
     if hdr is None:
+        if last_error and last_error[0] == ERR_TRANSFER_BUSY:
+            raise RuntimeError(
+                "GET_FILE error: code=0x0005 Transfer busy "
+                f"(after {GET_FILE_MAX_ATTEMPTS} retries)"
+            )
         raise TimeoutError("GET_FILE timeout")
-    if hdr["msg_type"] == MSG_ERROR:
-        code, msg = parse_error(resp)
-        raise RuntimeError(f"GET_FILE error: code=0x{code:04X} {msg}")
     if hdr["msg_type"] != MSG_GET_FILE_ACK:
         raise RuntimeError("Unexpected GET_FILE_ACK")
 
@@ -411,6 +453,7 @@ def main():
     parser.add_argument("date", help="Date folder, YYYYMMDD")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Server port")
     parser.add_argument("--since", default="", help="Since file name, YYYYMMDDHHMMSS")
+    parser.add_argument("--wifi-name", default=DEFAULT_WIFI_NAME, help="Connected Wi-Fi SSID")
     args = parser.parse_args()
 
     date = args.date
@@ -448,7 +491,7 @@ def main():
         return 0
     emit_event("files_count", count=len(files))
 
-    out_dir = os.path.join(os.path.dirname(__file__), f"Re{date}")
+    out_dir = build_output_folder(os.path.dirname(__file__), date, args.wifi_name)
     os.makedirs(out_dir, exist_ok=True)
     emit_event("folder", path=out_dir)
 
