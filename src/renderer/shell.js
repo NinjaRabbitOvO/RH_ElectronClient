@@ -1296,12 +1296,12 @@ function renderReceivedDatViewer(payload) {
   receivedFileViewer.append(sampling);
 
   if (payload.axis) {
-    receivedFileViewer.append(renderAxisSection("X", payload.axis.x));
-    receivedFileViewer.append(renderAxisSection("Y", payload.axis.y));
     if (payload.track) {
       receivedFileViewer.append(renderAxisSection("Track_return_voltage", payload.track));
     }
     receivedFileViewer.append(renderAxisSection("Z", payload.axis.z));
+    receivedFileViewer.append(renderAxisSection("X", payload.axis.x));
+    receivedFileViewer.append(renderAxisSection("Y", payload.axis.y));
   } else {
     const axisNote = document.createElement("p");
     axisNote.className = "received-viewer-note";
