@@ -334,7 +334,10 @@ function parseDatFile(folderName, fileName) {
     offset += 4;
     const trackSeries = readInt16Values(buffer, offset, sampleSize2, "Track_return_voltage list");
     offset = trackSeries.nextOffset;
-    track = summarizeSeries(trackSeries.values);
+    track = {
+      ...summarizeAxis(trackSeries.values),
+      values: trackSeries.values,
+    };
 
     trailingBytes = Math.max(0, buffer.length - offset);
   }
