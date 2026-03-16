@@ -117,6 +117,7 @@ let receivedViewerRequestId = 0;
 let wifiReadyScanTimer = 0;
 let wifiReadySsid = "";
 let wifiReadyNetworks = [];
+let wifiReadySelectionLocked = false;
 let wifiReadyScanning = false;
 let wifiReadyConnecting = false;
 const TRANSFER_FAILURE_NOTE =
@@ -153,6 +154,23 @@ function setWifiReadyStatus(text, tone = "") {
   wifiReadyStatus.textContent = text || "";
   wifiReadyStatus.classList.toggle("is-success", tone === "success");
   wifiReadyStatus.classList.toggle("is-error", tone === "error");
+}
+
+function toWifiSignalDb(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return null;
+  }
+  const clamped = Math.max(0, Math.min(100, numeric));
+  return Math.round(clamped / 2 - 100);
+}
+
+function formatWifiSignalLabel(network) {
+  const db = toWifiSignalDb(network && network.signal);
+  if (db === null) {
+    return "N/A dB";
+  }
+  return `${db} dB`;
 }
 
 function setWifiInputControlsDisabled(disabled) {
@@ -193,6 +211,7 @@ function setWifiReadyButton(options) {
 function createWifiReadyCard(network, options = {}) {
   const {
     selected = false,
+    selectionLocked = false,
     disabled = false,
     connecting = false,
     connected = false,
@@ -210,7 +229,9 @@ function createWifiReadyCard(network, options = {}) {
   } else if (connecting && selected) {
     button.classList.add("is-connecting", "is-active");
   } else {
-    button.classList.add("is-found", "is-pulsing");
+    if (selected || !selectionLocked) {
+      button.classList.add("is-found", "is-pulsing");
+    }
     if (selected) {
       button.classList.add("is-active");
     }
@@ -232,7 +253,7 @@ function createWifiReadyCard(network, options = {}) {
 
   const signal = document.createElement("span");
   signal.className = "wifi-ready-signal";
-  signal.textContent = `${network.signal || 0}%`;
+  signal.textContent = formatWifiSignalLabel(network);
 
   button.append(icon, label, signal);
   if (typeof onClick === "function") {
@@ -278,6 +299,7 @@ function renderWifiReadyCards(options = {}) {
       connected,
       onClick: () => {
         wifiReadySsid = network.ssid;
+        wifiReadySelectionLocked = true;
         renderWifiReadyCards({
           showScanning: false,
           disabled: false,
@@ -291,6 +313,7 @@ function renderWifiReadyCards(options = {}) {
           `Selected ${wifiReadySsid}. Enter password, or click Use Saved to connect with stored credentials.`,
         );
       },
+      selectionLocked: wifiReadySelectionLocked,
     });
     cards.push(card);
   });
@@ -409,10 +432,12 @@ async function scanReadyCheckWifi(options = {}) {
 
     if (wifiReadySsid && !wifiReadyNetworks.some((item) => item.ssid === wifiReadySsid)) {
       wifiReadySsid = "";
+      wifiReadySelectionLocked = false;
     }
 
     if (!wifiReadySsid && wifiReadyNetworks.length) {
       wifiReadySsid = wifiReadyNetworks[0].ssid;
+      wifiReadySelectionLocked = false;
     }
 
     const bestNetwork = wifiReadyNetworks.find((item) => item.ssid === wifiReadySsid)
@@ -434,7 +459,7 @@ async function scanReadyCheckWifi(options = {}) {
       const networkHint =
         networkCount > 1
           ? `Detected ${networkCount} ESP networks. Click one of the green cards to continue.`
-          : `Detected ${wifiReadySsid} (${bestNetwork.signal || 0}%).`;
+          : `Detected ${wifiReadySsid} (${formatWifiSignalLabel(bestNetwork)}).`;
       setWifiReadyStatus(
         `${prefix}${networkHint} Click to choose network and connect.`,
         "success",
